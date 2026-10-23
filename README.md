@@ -1,11 +1,11 @@
 # code-lint
 
-oxlint・oxfmt の共通設定と、Biome のルールを移植した oxlint の JS プラグインをまとめたパッケージ。
+oxlint・oxfmt の共通設定と、Biome のルール・コンポーネント設計の規約を検査する oxlint の JS プラグインをまとめたパッケージ。
 oxlint が読めない `.graphql` と JSON のキー順を検査する CLI も同梱する。
 
 - `oxlintrc.json`：Biome の recommended 相当のルールを有効にした oxlint の設定。プラグインもここから読み込む
 - `oxfmtrc.json`：Biome の formatter と organizeImports 相当の oxfmt の設定
-- `code-lint/*`：oxlint に同等のルールが無いものを、Biome の実装を読んで移植した JS プラグインのルール
+- `code-lint/*`：oxlint に同等のルールが無いものを Biome の実装から移植したルールと、規約のルール（既定では無効）
 - `code-lint-graphql`・`code-lint-sort-json-keys`：`.graphql` と JSON を検査する CLI
 
 ## インストール
@@ -70,7 +70,10 @@ code-lint-sort-json-keys --ignore '**/*.local.json' 'tsconfig.json' 'src/**/*.js
 
 ## ルール
 
+### Biome の機能の置き換え
+
 oxlint・oxfmt に同等の機能が無いものは、Biome の実装を読んで移植した。
+`max-lines` 以外は `oxlintrc.json` で有効にしている。
 
 | ルール                             | 置き換え元                                                                       |
 | ---------------------------------- | -------------------------------------------------------------------------------- |
@@ -88,6 +91,65 @@ Biome の実装の癖（`else` を抜けるとネストが浅くなる、埋め�
 
 GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` `` に埋め込んだ GraphQL を検査する。
 埋め込み式（`${...}`）を含むものは対象にしない。
+
+### 規約のルール
+
+コンポーネントとテストの書き方の規約を検査するルール。
+`oxlintrc.json` では有効にしていないため、当てたいパスを利用側の `overrides` で指定する。
+検出範囲は移植元の GritQL 版に合わせている（戻り値の型注釈がある関数を対象にしない、など）。
+
+フックとロジックを、コンポーネントと同じ場所に置く `useService` フックにまとめる規約のルール。
+
+| ルール                                 | 内容                                                                        |
+| -------------------------------------- | --------------------------------------------------------------------------- |
+| `only-use-service-hooks`               | コンポーネントでは `useService` 以外のフック（`use*`）を呼ばない            |
+| `no-handler-in-component`              | コンポーネント内で変数を宣言しない（`const { … } = useService()` だけ許す） |
+| `no-inline-handler-logic`              | JSX の `on*` props に、本体がブロックの関数を直接書かない                   |
+| `use-service-single-component`         | 1 ファイルで `useService()` を呼ぶコンポーネントは 1 つまで                 |
+| `use-service-handle-only`              | `useService` 内の関数変数の名前は `handleXxx` にする                        |
+| `no-raw-setter-return`                 | `useService` の return で `useState` の setter をそのまま返さない           |
+| `no-expo-router-in-use-service-return` | `useRouter()` の値を `useService` の return に含めない                      |
+| `no-multiple-feature-exports`          | 1 つのファイルから export するのは 1 つだけ（feature の入口に当てる）       |
+
+`specIt(spec, key, { given, when, yields })` の形で仕様テストを書く規約のルール。
+
+| ルール                    | 内容                                                       |
+| ------------------------- | ---------------------------------------------------------- |
+| `no-raw-vitest-test`      | 仕様テストでは素の `it` / `test` を使わず、`specIt` を使う |
+| `no-expect-in-given-when` | given / when フェーズで `expect` を呼ばない                |
+| `no-waiting-in-when`      | when フェーズで待たない（`waitFor`・`findBy*` を使わない） |
+| `use-expression-when`     | when フェーズの `run` は、操作 1 つの式にする              |
+| `no-event-in-yields`      | yields フェーズで `fireEvent` / `userEvent` を呼ばない     |
+
+UI と Storybook のルール。
+
+| ルール                | 内容                                                     |
+| --------------------- | -------------------------------------------------------- |
+| `no-style-prop-in-ui` | UI コンポーネントの Props に `style` を出さない          |
+| `no-test-id`          | `testID` 属性を使わず、`aria-label` などで要素を特定する |
+| `no-storybook-title`  | Storybook の meta に `title` を書かず、autoTitle を使う  |
+
+```jsonc
+// .oxlintrc.json
+{
+  "extends": ["./node_modules/@ksugawara61/code-lint/oxlintrc.json"],
+  "overrides": [
+    {
+      "files": ["src/features/**/*.tsx"],
+      "rules": {
+        "code-lint/no-inline-handler-logic": "error",
+        "code-lint/only-use-service-hooks": "error",
+      },
+    },
+    {
+      "files": ["src/**/stories.tsx"],
+      "rules": { "code-lint/no-storybook-title": "error" },
+    },
+  ],
+}
+```
+
+### テスト
 
 ルールごとに `src/rules/<rule>.test.ts` があり、oxlint の `RuleTester` で検出する例としない例を書いている。
 ルールが何を担保しているかは、テストの `name` を読めばわかる。
