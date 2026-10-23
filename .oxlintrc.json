@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["./oxlintrc.json"],
+  "ignorePatterns": ["dist"],
+  "overrides": [
+    {
+      "files": ["src/plugin.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    }
+  ]
+}
