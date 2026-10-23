@@ -1,0 +1,9 @@
+{
+  "author": {
+    "name": "ksugawara61"
+  },
+  "description": "pnpm と oxlint・oxfmt を使う JS / TS プロジェクト向けのフック（npx のブロック・編集後の自動修正と整形）",
+  "license": "MIT",
+  "name": "js-toolchain",
+  "repository": "https://github.com/ksugawara61/harness"
+}

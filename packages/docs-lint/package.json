@@ -1,0 +1,65 @@
+{
+  "bin": {
+    "docs-lint": "./dist/bin/docs-lint.js"
+  },
+  "bugs": "https://github.com/ksugawara61/harness/issues",
+  "dependencies": {
+    "@textlint-ja/textlint-rule-preset-ai-writing": "catalog:",
+    "markdownlint-cli2": "catalog:",
+    "textlint": "catalog:",
+    "textlint-rule-preset-ai-words-ja": "catalog:",
+    "textlint-rule-preset-ja-technical-writing": "catalog:"
+  },
+  "description": "Lint Markdown documents with textlint profiles for Japanese technical writing, markdownlint, and a body character limit, only on changed lines",
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./char-limit": {
+      "types": "./dist/char-limit/count.d.ts",
+      "default": "./dist/char-limit/count.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "profiles"
+  ],
+  "homepage": "https://github.com/ksugawara61/harness/tree/main/packages/docs-lint#readme",
+  "keywords": [
+    "japanese",
+    "lint",
+    "markdown",
+    "markdownlint",
+    "textlint"
+  ],
+  "license": "MIT",
+  "name": "@ksugawara61/docs-lint",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "directory": "packages/docs-lint",
+    "type": "git",
+    "url": "git+https://github.com/ksugawara61/harness.git"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}

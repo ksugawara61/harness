@@ -16,6 +16,9 @@ jobs:
         node: [22, 24]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # lint:docs が origin/main からの変更行を求めるため、履歴を取得する
+          fetch-depth: 0
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -23,10 +26,10 @@ jobs:
           node-version: ${{ matrix.node }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
-      # dist/ をビルドしてから、このパッケージの oxlintrc.json で自身を検査する
+      # dist/ をビルドしてから、code-lint の oxlintrc.json と docs-lint で harness 自身を検査する
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm knip
       - run: pnpm test
       - name: Pack
-        run: pnpm pack --dry-run
+        run: pnpm -r pack --dry-run

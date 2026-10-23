@@ -1,76 +1,26 @@
 {
-  "bin": {
-    "code-lint-graphql": "./dist/bin/lint-graphql.js",
-    "code-lint-sort-json-keys": "./dist/bin/sort-json-keys.js"
-  },
-  "bugs": "https://github.com/ksugawara61/code-lint/issues",
-  "dependencies": {
-    "@oxlint/plugins": "^1.87.0",
-    "aria-query": "^5.3.2",
-    "graphql": "^16.14.1"
-  },
-  "description": "Shared oxlint and oxfmt config with a JS plugin that ports Biome rules, plus GraphQL and JSON key-order checks",
   "devDependencies": {
-    "@types/aria-query": "^5.0.4",
-    "@types/node": "25.2.0",
-    "knip": "^6.12.2",
-    "oxfmt": "^0.72.0",
-    "oxlint": "^1.87.0",
-    "typescript": "^6.0.3",
-    "vitest": "5.0.5"
+    "knip": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:"
   },
   "engines": {
     "node": ">=22"
   },
-  "exports": {
-    "./oxfmtrc.json": "./oxfmtrc.json",
-    "./oxlintrc.json": "./oxlintrc.json",
-    "./package.json": "./package.json",
-    "./plugin": {
-      "types": "./dist/plugin.d.ts",
-      "default": "./dist/plugin.js"
-    }
-  },
-  "files": [
-    "dist",
-    "!dist/**/*.map",
-    "oxfmtrc.json",
-    "oxlintrc.json"
-  ],
-  "homepage": "https://github.com/ksugawara61/code-lint#readme",
-  "keywords": [
-    "biome",
-    "graphql",
-    "lint",
-    "oxfmt",
-    "oxlint",
-    "oxlint-plugin"
-  ],
-  "license": "MIT",
-  "name": "@ksugawara61/code-lint",
+  "name": "harness",
   "packageManager": "pnpm@11.1.2",
-  "peerDependencies": {
-    "oxlint": "^1.87.0"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ksugawara61/code-lint.git"
-  },
+  "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "format": "oxfmt -c oxfmtrc.json",
-    "format:check": "oxfmt -c oxfmtrc.json --check",
+    "build": "pnpm -r build",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "knip": "knip",
-    "lint": "pnpm build && oxlint && pnpm lint:json",
-    "lint:json": "node src/bin/sort-json-keys.ts oxlintrc.json oxfmtrc.json .oxlintrc.json",
-    "prepack": "pnpm build",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
-  "type": "module",
-  "version": "0.1.0"
+    "lint": "pnpm build && oxlint && pnpm lint:json && pnpm lint:docs && pnpm lint:shell",
+    "lint:docs": "node packages/docs-lint/src/bin/docs-lint.ts",
+    "lint:json": "node packages/code-lint/src/bin/sort-json-keys.ts 'package.json' '.oxlintrc.json' '.claude-plugin/*.json' 'claude/settings.json' 'plugins/*/.claude-plugin/*.json' 'plugins/*/hooks/*.json' 'packages/*/oxlintrc.json' 'packages/*/oxfmtrc.json' 'packages/*/profiles/**/*.json'",
+    "lint:shell": "bash -n scripts/*.sh plugins/*/hooks/*.sh",
+    "test": "pnpm -r test && pnpm test:scripts",
+    "test:scripts": "bash scripts/install.test.sh",
+    "typecheck": "pnpm -r typecheck"
+  }
 }

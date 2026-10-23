@@ -1,0 +1,58 @@
+{
+  "description": "ksugawara61 のプロジェクトで共通に使う Claude Code のプラグイン",
+  "name": "harness",
+  "owner": {
+    "name": "ksugawara61",
+    "url": "https://github.com/ksugawara61"
+  },
+  "plugins": [
+    {
+      "category": "productivity",
+      "description": "リポジトリをまたいで使う開発フローのスキルとサブエージェント（sync-main・explore）",
+      "name": "workflow",
+      "source": "./plugins/workflow"
+    },
+    {
+      "category": "development",
+      "description": "pnpm と oxlint・oxfmt を使う JS / TS プロジェクト向けのフック（npx のブロック・編集後の自動修正と整形）",
+      "name": "js-toolchain",
+      "source": "./plugins/js-toolchain"
+    },
+    {
+      "category": "productivity",
+      "description": "agpr CLI で PR を作成し、レビューコメントに対応するスキル（agpr-pr・agpr-fix）",
+      "homepage": "https://github.com/ksugawara61/agpr",
+      "name": "agpr",
+      "skills": ["./agpr-pr", "./agpr-fix"],
+      "source": {
+        "path": "skills",
+        "source": "git-subdir",
+        "url": "ksugawara61/agpr"
+      }
+    },
+    {
+      "category": "productivity",
+      "description": "超圧縮コミュニケーションモードのスキル群（genshijin・genshijin-commit など）。取り込み元のプラグインと違い、毎セッションでモードを有効にするフックは入れない",
+      "homepage": "https://github.com/InterfaceX-co-jp/genshijin",
+      "name": "genshijin",
+      "skills": ["./"],
+      "source": {
+        "path": "skills",
+        "ref": "v1.3.0",
+        "source": "git-subdir",
+        "url": "InterfaceX-co-jp/genshijin"
+      }
+    },
+    {
+      "category": "productivity",
+      "description": "計画や設計を質問攻めにして詰めるスキル（mattpocock/skills の grill-me）",
+      "homepage": "https://github.com/mattpocock/skills",
+      "name": "grill-me",
+      "source": {
+        "path": "skills/productivity/grill-me",
+        "source": "git-subdir",
+        "url": "mattpocock/skills"
+      }
+    }
+  ]
+}

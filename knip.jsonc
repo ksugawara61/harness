@@ -1,5 +1,23 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/plugin.ts", "src/bin/*.ts"],
-  "project": ["src/**/*.ts"],
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": [],
+    },
+    "packages/code-lint": {
+      "entry": ["src/plugin.ts", "src/bin/*.ts"],
+      "project": ["src/**/*.ts"],
+    },
+    "packages/docs-lint": {
+      "entry": ["src/index.ts", "src/char-limit/count.ts", "src/bin/*.ts"],
+      "project": ["src/**/*.ts"],
+      // profiles/textlint/*.json の rules から textlint が名前で読み込むため、import されない
+      "ignoreDependencies": [
+        "@textlint-ja/textlint-rule-preset-ai-writing",
+        "textlint-rule-preset-ai-words-ja",
+        "textlint-rule-preset-ja-technical-writing",
+      ],
+    },
+  },
 }

@@ -1,0 +1,15 @@
+// markdownlint のプロファイル。既定ルールをすべて有効にし、リポジトリの文書に合わないものだけを外す。
+// 利用側のリポジトリルートの .markdownlint-cli2.jsonc が extends で読み、docs-lint と VS Code の拡張が同じルールで検査する。
+{
+  "default": true,
+  // 以下の 7 ルールは、日本語の文書や README でよく使う書き方（長い行・インライン HTML・裸の URL など）と合わないもの
+  "line-length": false,
+  "no-hard-tabs": false,
+  "no-trailing-punctuation": false,
+  "no-inline-html": false,
+  "no-bare-urls": false,
+  "no-space-in-emphasis": false,
+  "link-fragments": false,
+  // スキル・サブエージェントの定義は front matter の直後が本文（プロンプト）で、h1 を足すとプロンプトが変わる
+  "first-line-heading": false,
+}

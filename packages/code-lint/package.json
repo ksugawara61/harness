@@ -1,0 +1,69 @@
+{
+  "bin": {
+    "code-lint-graphql": "./dist/bin/lint-graphql.js",
+    "code-lint-sort-json-keys": "./dist/bin/sort-json-keys.js"
+  },
+  "bugs": "https://github.com/ksugawara61/harness/issues",
+  "dependencies": {
+    "@oxlint/plugins": "catalog:",
+    "aria-query": "catalog:",
+    "graphql": "catalog:"
+  },
+  "description": "Shared oxlint and oxfmt config with a JS plugin that ports Biome rules, plus GraphQL and JSON key-order checks",
+  "devDependencies": {
+    "@types/aria-query": "catalog:",
+    "@types/node": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    "./oxfmtrc.json": "./oxfmtrc.json",
+    "./oxlintrc.json": "./oxlintrc.json",
+    "./package.json": "./package.json",
+    "./plugin": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "oxfmtrc.json",
+    "oxlintrc.json"
+  ],
+  "homepage": "https://github.com/ksugawara61/harness/tree/main/packages/code-lint#readme",
+  "keywords": [
+    "biome",
+    "graphql",
+    "lint",
+    "oxfmt",
+    "oxlint",
+    "oxlint-plugin"
+  ],
+  "license": "MIT",
+  "name": "@ksugawara61/code-lint",
+  "peerDependencies": {
+    "oxlint": "^1.87.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "directory": "packages/code-lint",
+    "type": "git",
+    "url": "git+https://github.com/ksugawara61/harness.git"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}
