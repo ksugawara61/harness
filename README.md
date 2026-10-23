@@ -1,175 +1,118 @@
-# code-lint
+# harness
 
-oxlint・oxfmt の共通設定と、Biome のルール・コンポーネント設計の規約を検査する oxlint の JS プラグインをまとめたパッケージ。
-oxlint が読めない `.graphql` と JSON のキー順を検査する CLI も同梱する。
+複数のプロジェクトで共通に使う、lint の設定と Claude Code の設定をまとめて管理するリポジトリ。
+curio で育てた lint のルールと Claude Code の設定を、ほかのプロジェクトにも同じ形で当てられるようにする。
 
-- `oxlintrc.json`：Biome の recommended 相当のルールを有効にした oxlint の設定。プラグインもここから読み込む
-- `oxfmtrc.json`：Biome の formatter と organizeImports 相当の oxfmt の設定
-- `code-lint/*`：oxlint に同等のルールが無いものを Biome の実装から移植したルールと、規約のルール（既定では無効）
-- `code-lint-graphql`・`code-lint-sort-json-keys`：`.graphql` と JSON を検査する CLI
+| 置き場所                      | 中身                                                                         | 配り方                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `packages/code-lint`          | oxlint・oxfmt の共通設定と oxlint の JS プラグイン、GraphQL・JSON の検査 CLI | npm（`@ksugawara61/code-lint`）                          |
+| `packages/docs-lint`          | Markdown 文書の textlint・markdownlint・文字数上限の検査 CLI                 | npm（`@ksugawara61/docs-lint`）                          |
+| `claude/`                     | Claude Code のユーザー設定（`settings.json`）とルール（`rules/`）            | clone して `scripts/install.sh` で `~/.claude` に配置    |
+| `plugins/`・`.claude-plugin/` | スキル・サブエージェント・フック                                             | Claude Code のプラグイン（マーケットプレイス `harness`） |
 
-## インストール
+プラグインにはルールと `settings.json` を入れられない。
+そのため、プラグインにできるものは `plugins/` に、できないものは `claude/` に置く。
 
-Node.js 22 以上で動く。oxlint は peer dependency のため、利用側で入れる。
+## Claude Code の設定
 
-```bash
-pnpm add -D @ksugawara61/code-lint oxlint oxfmt
-```
+### コンテナの起動時に配置する
 
-## oxlint
-
-`oxlintrc.json` を `extends` する。
-oxlint の `extends` はパッケージ名で解決しないため、`node_modules` からのパスで書く。
-`code-lint/*` のルールは、`oxlintrc.json` が読み込むプラグインから使える。
-
-```jsonc
-// .oxlintrc.json
-{
-  "extends": ["./node_modules/@ksugawara61/code-lint/oxlintrc.json"],
-  "overrides": [
-    {
-      "files": ["src/**"],
-      "rules": { "code-lint/max-lines": ["error", { "maxLines": 500 }] },
-    },
-  ],
-}
-```
-
-どのパスにどのルールを当てるかは、利用側の設定に書く。
-`oxlintrc.json` は `correctness` のカテゴリを切り、ルールを 1 つずつ有効にしている。
-
-`typescript/no-floating-promises` は型情報を使うルールのため、型情報を使う検査を有効にしたときだけ動く。
-使う場合は `oxlint-tsgolint` を入れ、利用側の設定に `"options": { "typeAware": true }` を書く。
-
-## oxfmt
-
-oxfmt の設定は `extends` できないため、`oxfmt.config.mts` で読み込んで広げる。
-
-```ts
-// oxfmt.config.mts
-import base from "@ksugawara61/code-lint/oxfmtrc.json" with { type: "json" };
-
-export default { ...base, ignorePatterns: ["**/*.md"] };
-```
-
-## GraphQL と JSON の検査
-
-oxlint は `.graphql` と JSON を読めない。そのため、次の 2 つの CLI を `lint` スクリプトに足す。
+Claude Code on the web の環境のセットアップスクリプトや、devcontainer の `postCreateCommand` に次の 1 行を書く。
 
 ```bash
-code-lint-graphql 'src/**/*.graphql'
-code-lint-sort-json-keys --ignore '**/*.local.json' 'tsconfig.json' 'src/**/*.json'
+curl -fsSL https://raw.githubusercontent.com/ksugawara61/harness/main/scripts/bootstrap.sh | bash
 ```
 
-- `code-lint-graphql [--ignore <グロブ>]... <ファイルまたはグロブ>...`：JS に埋め込んだ GraphQL と同じ検査（下の `graphql-*`）を `.graphql` に掛ける
-- `code-lint-sort-json-keys [--write] [--ignore <グロブ>]... <ファイルまたはグロブ>...`：JSON のキーが natural order に並んでいるかを検査する。
-  `--write` を付けると並べ替えて書き込む。書き込んだ後は oxfmt で整形する
+`scripts/bootstrap.sh` は harness を `~/.harness` に clone し（2 回目以降は更新し）、`scripts/install.sh` を呼ぶ。
+環境変数で clone 先と取り込む版を変えられる。
 
-どちらも `node_modules` の中のファイルは対象にせず、指摘があれば終了コード 1 になる。
-`package.json` の `exports` のように、キーの順に意味がある JSON は対象にしない。
+| 環境変数       | 既定値                                       | 内容                       |
+| -------------- | -------------------------------------------- | -------------------------- |
+| `HARNESS_DIR`  | `~/.harness`                                 | clone 先                   |
+| `HARNESS_REPO` | `https://github.com/ksugawara61/harness.git` | clone 元                   |
+| `HARNESS_REF`  | `main`                                       | 取り込むブランチまたはタグ |
 
-## ルール
+手元のマシンでは、clone してから `scripts/install.sh` を直接呼ぶ。
 
-### Biome の機能の置き換え
-
-oxlint・oxfmt に同等の機能が無いものは、Biome の実装を読んで移植した。
-`max-lines` 以外は `oxlintrc.json` で有効にしている。
-
-| ルール                             | 置き換え元                                                                       |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| `sort-keys`・`sort-jsx-attributes` | assist の `useSortedKeys`・`useSortedAttributes`（natural order）                |
-| `cognitive-complexity`             | `noExcessiveCognitiveComplexity`（`maxAllowedComplexity`、既定 15）              |
-| `max-lines`                        | `noExcessiveLinesPerFile`（`maxLines`、既定 300。`oxlintrc.json` では無効）      |
-| `no-unused-template-literal`       | `noUnusedTemplateLiteral`                                                        |
-| `use-parse-int-radix`              | `useParseIntRadix`（ESLint の `radix` は式の基数も不正と判定する）               |
-| `graphql-*` と `code-lint-graphql` | GraphQL のルール（`noDuplicateFields` など 12 個）                               |
-| `code-lint-sort-json-keys`         | JSON の `useSortedKeys`                                                          |
-| その他の `no-*`・`use-*`           | oxlint に対応ルールが無い recommended のルール（`noUselessContinue` など 17 個） |
-
-`cognitive-complexity`・`max-lines`・natural order の比較は、Biome と同じ値になるようにしている。
-Biome の実装の癖（`else` を抜けるとネストが浅くなる、埋め込み GraphQL を別のドキュメントとして数える、など）も再現している。
-
-GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` `` に埋め込んだ GraphQL を検査する。
-埋め込み式（`${...}`）を含むものは対象にしない。
-
-### 規約のルール
-
-コンポーネントとテストの書き方の規約を検査するルール。
-`oxlintrc.json` では有効にしていないため、当てたいパスを利用側の `overrides` で指定する。
-検出範囲は移植元の GritQL 版に合わせている（戻り値の型注釈がある関数を対象にしない、など）。
-
-フックとロジックを、コンポーネントと同じ場所に置く `useService` フックにまとめる規約のルール。
-
-| ルール                                 | 内容                                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------- |
-| `only-use-service-hooks`               | コンポーネントでは `useService` 以外のフック（`use*`）を呼ばない            |
-| `no-handler-in-component`              | コンポーネント内で変数を宣言しない（`const { … } = useService()` だけ許す） |
-| `no-inline-handler-logic`              | JSX の `on*` props に、本体がブロックの関数を直接書かない                   |
-| `use-service-single-component`         | 1 ファイルで `useService()` を呼ぶコンポーネントは 1 つまで                 |
-| `use-service-handle-only`              | `useService` 内の関数変数の名前は `handleXxx` にする                        |
-| `no-raw-setter-return`                 | `useService` の return で `useState` の setter をそのまま返さない           |
-| `no-expo-router-in-use-service-return` | `useRouter()` の値を `useService` の return に含めない                      |
-| `no-multiple-feature-exports`          | 1 つのファイルから export するのは 1 つだけ（feature の入口に当てる）       |
-
-`specIt(spec, key, { given, when, yields })` の形で仕様テストを書く規約のルール。
-
-| ルール                    | 内容                                                       |
-| ------------------------- | ---------------------------------------------------------- |
-| `no-raw-vitest-test`      | 仕様テストでは素の `it` / `test` を使わず、`specIt` を使う |
-| `no-expect-in-given-when` | given / when フェーズで `expect` を呼ばない                |
-| `no-waiting-in-when`      | when フェーズで待たない（`waitFor`・`findBy*` を使わない） |
-| `use-expression-when`     | when フェーズの `run` は、操作 1 つの式にする              |
-| `no-event-in-yields`      | yields フェーズで `fireEvent` / `userEvent` を呼ばない     |
-
-UI と Storybook のルール。
-
-| ルール                | 内容                                                     |
-| --------------------- | -------------------------------------------------------- |
-| `no-style-prop-in-ui` | UI コンポーネントの Props に `style` を出さない          |
-| `no-test-id`          | `testID` 属性を使わず、`aria-label` などで要素を特定する |
-| `no-storybook-title`  | Storybook の meta に `title` を書かず、autoTitle を使う  |
-
-```jsonc
-// .oxlintrc.json
-{
-  "extends": ["./node_modules/@ksugawara61/code-lint/oxlintrc.json"],
-  "overrides": [
-    {
-      "files": ["src/features/**/*.tsx"],
-      "rules": {
-        "code-lint/no-inline-handler-logic": "error",
-        "code-lint/only-use-service-hooks": "error",
-      },
-    },
-    {
-      "files": ["src/**/stories.tsx"],
-      "rules": { "code-lint/no-storybook-title": "error" },
-    },
-  ],
-}
+```bash
+git clone https://github.com/ksugawara61/harness.git ~/.harness
+~/.harness/scripts/install.sh
 ```
 
-### テスト
+### install.sh が配置するもの
 
-ルールごとに `src/rules/<rule>.test.ts` があり、oxlint の `RuleTester` で検出する例としない例を書いている。
-ルールが何を担保しているかは、テストの `name` を読めばわかる。
+配置先は `~/.claude`（`CLAUDE_CONFIG_DIR` があればそちら）。
+`~/.claude` には履歴やセッションなどの実行時データも置かれるため、ディレクトリごとではなく項目単位で配置する。
+
+- `claude/rules/*.md`：`~/.claude/rules/` にシンボリックリンクする。clone を更新すれば、次のセッションから反映される。
+  同じ名前のファイルが既にあれば上書きせずにスキップし、harness から消えたルールへのリンクは外す
+- `claude/settings.json`：`~/.claude/settings.json` にマージする。ファイルが無ければコピーする。
+  オブジェクトは再帰的に、配列（`permissions.allow` など）は和集合でマージし、それ以外の値は harness 側を優先する。
+  `claude plugin install` が書き込むため、シンボリックリンクにはしない
+- プラグイン：clone したディレクトリをマーケットプレイス `harness` として登録し、全プラグインを user スコープに入れる。
+  入れるプラグインは `HARNESS_PLUGINS`（空白区切り）で絞れる。`--no-plugins` を付けると入れない
+
+`settings.json` のマージには `jq` を、プラグインの導入には `claude` コマンドを使う。
+
+### ルール
+
+| ルール                 | 内容                          |
+| ---------------------- | ----------------------------- |
+| `javascript.md`        | JavaScript のコーディング規約 |
+| `typescript.md`        | TypeScript のコーディング規約 |
+| `test.md`              | Vitest で書くテストの書き方   |
+| `test-strategy.md`     | 何をテストするか              |
+| `working-directory.md` | 作業ディレクトリの扱い        |
+
+### プラグイン
+
+マーケットプレイスは `.claude-plugin/marketplace.json` にある。
+`install.sh` を使わずに入れるときは、Claude Code で次を実行する。
+
+```bash
+claude plugin marketplace add ksugawara61/harness
+claude plugin install workflow@harness
+```
+
+| プラグイン     | 中身                                                                                                | 取り込み元                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `workflow`     | スキル `sync-main`、サブエージェント `explore`                                                      | `plugins/workflow`                                                                                 |
+| `js-toolchain` | pnpm のプロジェクトで `npx` を止めるフック、編集後に oxlint の自動修正と oxfmt の整形を掛けるフック | `plugins/js-toolchain`                                                                             |
+| `agpr`         | スキル `agpr-pr`・`agpr-fix`                                                                        | [ksugawara61/agpr](https://github.com/ksugawara61/agpr) の `skills/`                               |
+| `genshijin`    | スキル `genshijin`・`genshijin-commit` など 5 つ                                                    | [InterfaceX-co-jp/genshijin](https://github.com/InterfaceX-co-jp/genshijin) の `skills/`（v1.3.0） |
+| `grill-me`     | スキル `grill-me`                                                                                   | [mattpocock/skills](https://github.com/mattpocock/skills) の `skills/productivity/grill-me`        |
+
+外部のスキルは harness に複製せず、取り込み元のリポジトリを参照する。
+`genshijin` は、毎セッションでモードを有効にする取り込み元のフックを入れず、スキルだけを入れる。
+
+`js-toolchain` のフックは、プロジェクトの `node_modules/.bin` にある oxlint・oxfmt だけを使い、無ければ何もしない。
+`npx` を止めるのは、プロジェクトのルートに `pnpm-lock.yaml` があるときだけ。
+
+## lint のパッケージ
+
+使い方はそれぞれの README を参照する。
+
+- [packages/code-lint](packages/code-lint/README.md)
+- [packages/docs-lint](packages/docs-lint/README.md)
 
 ## 開発
 
+pnpm workspace で管理する。パッケージは `packages/` 配下に置く。
+
 ```bash
 pnpm install
-pnpm test          # vitest
-pnpm typecheck     # tsc
-pnpm lint          # dist/ をビルドし、oxlintrc.json で自身を検査する
+pnpm test          # 各パッケージの vitest と、scripts/install.test.sh
+pnpm typecheck     # 各パッケージの tsc
+pnpm lint          # ビルドしてから oxlint・JSON のキー順・文書・シェルスクリプトを検査する
 pnpm format        # oxfmt
 pnpm knip          # 未使用の export・依存の検出
-pnpm build         # dist/ に JavaScript と型定義を出力する
+pnpm build         # 各パッケージの dist/ を出力する
 ```
 
-Node.js は `node_modules` 配下の `.ts` を実行しないため、プラグインと CLI は `dist/` にビルドして公開する。
-`oxlintrc.json` も `dist/plugin.js` を読み込むため、このリポジトリで `oxlint` を動かす前にビルドが要る。
+harness 自身も `packages/code-lint/oxlintrc.json` と `docs-lint` で検査する。
+プラグインとマーケットプレイスは `claude plugin validate .` で検証する。
 
-`v*` のタグを push すると、GitHub Actions が npm に公開する。
+`<パッケージのディレクトリ名>-v<version>`（例: `code-lint-v0.1.0`）のタグを push すると、GitHub Actions がそのパッケージを npm に公開する。
 
 ## ライセンス
 

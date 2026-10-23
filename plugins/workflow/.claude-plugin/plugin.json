@@ -1,0 +1,9 @@
+{
+  "author": {
+    "name": "ksugawara61"
+  },
+  "description": "リポジトリをまたいで使う開発フローのスキルとサブエージェント（sync-main・explore）",
+  "license": "MIT",
+  "name": "workflow",
+  "repository": "https://github.com/ksugawara61/harness"
+}
