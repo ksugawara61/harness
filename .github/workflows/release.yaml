@@ -1,8 +1,9 @@
 name: Release
 
+# <パッケージのディレクトリ名>-v<version> のタグで、そのパッケージを npm に公開する（例: code-lint-v0.1.0）
 on:
   push:
-    tags: ["v*"]
+    tags: ["*-v*"]
 
 permissions:
   contents: read
@@ -21,15 +22,22 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
-      - name: タグと package.json の version が一致することを確かめる
+      - name: タグからパッケージを決め、package.json の version と一致することを確かめる
+        id: package
         run: |
-          version="$(node -p 'require("./package.json").version')"
-          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "タグ ${GITHUB_REF_NAME} と package.json の version ${version} が一致しません" >&2
+          dir="packages/${GITHUB_REF_NAME%-v*}"
+          if [ ! -f "${dir}/package.json" ]; then
+            echo "タグ ${GITHUB_REF_NAME} に対応するパッケージ ${dir} がありません" >&2
             exit 1
           fi
-      - run: pnpm test
+          version="$(node -p "require('./${dir}/package.json').version")"
+          if [ "${GITHUB_REF_NAME##*-v}" != "${version}" ]; then
+            echo "タグ ${GITHUB_REF_NAME} と ${dir}/package.json の version ${version} が一致しません" >&2
+            exit 1
+          fi
+          echo "dir=${dir}" >>"$GITHUB_OUTPUT"
+      - run: pnpm --filter "./${{ steps.package.outputs.dir }}" test
       # prepack で dist/ をビルドしてから公開する
-      - run: pnpm publish --no-git-checks
+      - run: pnpm --filter "./${{ steps.package.outputs.dir }}" publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

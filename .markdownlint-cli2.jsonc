@@ -1,0 +1,8 @@
+// markdownlint（pnpm lint:docs と VS Code の markdownlint 拡張）の設定。ルールは docs-lint のプロファイルにある
+{
+  "config": {
+    "extends": "./packages/docs-lint/profiles/markdownlint.jsonc",
+  },
+  // .textlintignore と同じ対象を除く（一致していることを packages/docs-lint のテストで確かめる）
+  "ignores": [],
+}

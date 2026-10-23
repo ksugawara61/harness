@@ -1,10 +1,10 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "extends": ["./oxlintrc.json"],
-  "ignorePatterns": ["dist"],
+  "extends": ["./packages/code-lint/oxlintrc.json"],
+  "ignorePatterns": ["**/dist"],
   "overrides": [
     {
-      "files": ["src/plugin.ts"],
+      "files": ["oxfmt.config.mts", "packages/code-lint/src/plugin.ts"],
       "rules": {
         "import/no-default-export": "off"
       }
