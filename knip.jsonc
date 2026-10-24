@@ -19,5 +19,14 @@
         "textlint-rule-preset-ja-technical-writing",
       ],
     },
+    "packages/spec": {
+      "entry": [
+        "src/index.ts",
+        "src/reporter.ts",
+        "src/vitest.ts",
+        "src/bin/*.ts",
+      ],
+      "project": ["src/**/*.ts"],
+    },
   },
 }
