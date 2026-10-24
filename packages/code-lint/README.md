@@ -124,6 +124,16 @@ GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` ``
 | `use-expression-when`     | when フェーズの `run` は、操作 1 つの式にする              |
 | `no-event-in-yields`      | yields フェーズで `fireEvent` / `userEvent` を呼ばない     |
 
+API のモックを `mocks.ts` にまとめる規約のルール。
+
+| ルール             | 内容                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| `use-mocks-record` | export は `〜Mocks` の名前で `{ ... } satisfies Record<string, T>` にし、値に関数（ファクトリ）を置かない |
+
+`T` はモックの型（`HttpHandler`・`HttpHandler[]`・Props の型など）にする。
+ケース名で引いた値の型をどのケースでも同じにし、story や test で同じように `server.use(...XxxMocks.Success)` と書けるようにするため。
+ほかのモジュールの `〜Mocks` の re-export・素のデータやハンドラ単体の export も報告する。
+
 UI と Storybook のルール。
 
 | ルール                | 内容                                                     |

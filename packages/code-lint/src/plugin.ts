@@ -34,6 +34,7 @@ import { sortJsxAttributes } from "./rules/sort-jsx-attributes.ts";
 import { sortKeys } from "./rules/sort-keys.ts";
 import { useExpressionWhen } from "./rules/use-expression-when.ts";
 import { useFlatMathMinMax } from "./rules/use-flat-math-min-max.ts";
+import { useMocksRecord } from "./rules/use-mocks-record.ts";
 import { useParseIntRadix } from "./rules/use-parse-int-radix.ts";
 import { useSemanticElements } from "./rules/use-semantic-elements.ts";
 import { useServiceHandleOnly } from "./rules/use-service-handle-only.ts";
@@ -78,6 +79,7 @@ export default definePlugin({
     "sort-keys": sortKeys,
     "use-expression-when": useExpressionWhen,
     "use-flat-math-min-max": useFlatMathMinMax,
+    "use-mocks-record": useMocksRecord,
     "use-parse-int-radix": useParseIntRadix,
     "use-semantic-elements": useSemanticElements,
     "use-service-handle-only": useServiceHandleOnly,
