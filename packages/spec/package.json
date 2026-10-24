@@ -1,0 +1,69 @@
+{
+  "bin": {
+    "check-spec-coverage": "./dist/bin/check-spec-coverage.js"
+  },
+  "bugs": "https://github.com/ksugawara61/harness/issues",
+  "description": "Declare test specs as code with defineSpec, write them with specIt on Vitest, and check that every declared case is covered",
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./reporter": {
+      "types": "./dist/reporter.d.ts",
+      "default": "./dist/reporter.js"
+    },
+    "./vitest": {
+      "types": "./dist/vitest.d.ts",
+      "default": "./dist/vitest.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
+  "homepage": "https://github.com/ksugawara61/harness/tree/main/packages/spec#readme",
+  "keywords": [
+    "bdd",
+    "gherkin",
+    "spec",
+    "test",
+    "vitest"
+  ],
+  "license": "MIT",
+  "name": "@ksugawara61/spec",
+  "peerDependencies": {
+    "vitest": ">=3.2.0"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "directory": "packages/spec",
+    "type": "git",
+    "url": "git+https://github.com/ksugawara61/harness.git"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.1.0"
+}

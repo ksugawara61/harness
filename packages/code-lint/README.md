@@ -114,6 +114,7 @@ GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` ``
 | `no-multiple-feature-exports`          | 1 つのファイルから export するのは 1 つだけ（feature の入口に当てる）       |
 
 `specIt(spec, key, { given, when, yields })` の形で仕様テストを書く規約のルール。
+`specIt` は [spec](../spec/README.md) が提供する。
 
 | ルール                    | 内容                                                       |
 | ------------------------- | ---------------------------------------------------------- |

@@ -7,6 +7,7 @@ curio で育てた lint のルールと Claude Code の設定を、ほかのプ�
 | ----------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `packages/code-lint`          | oxlint・oxfmt の共通設定と oxlint の JS プラグイン、GraphQL・JSON の検査 CLI | npm（`@ksugawara61/code-lint`）                          |
 | `packages/docs-lint`          | Markdown 文書の textlint・markdownlint・文字数上限の検査 CLI                 | npm（`@ksugawara61/docs-lint`）                          |
+| `packages/spec`               | 仕様を `spec.ts` で宣言し、Vitest のテストと対応付けて網羅を検査する API     | npm（`@ksugawara61/spec`）                               |
 | `claude/`                     | Claude Code のユーザー設定（`settings.json`）とルール（`rules/`）            | clone して `scripts/install.sh` で `~/.claude` に配置    |
 | `plugins/`・`.claude-plugin/` | スキル・サブエージェント・フック                                             | Claude Code のプラグイン（マーケットプレイス `harness`） |
 
@@ -56,13 +57,14 @@ git clone https://github.com/ksugawara61/harness.git ~/.harness
 
 ### ルール
 
-| ルール                 | 内容                          |
-| ---------------------- | ----------------------------- |
-| `javascript.md`        | JavaScript のコーディング規約 |
-| `typescript.md`        | TypeScript のコーディング規約 |
-| `test.md`              | Vitest で書くテストの書き方   |
-| `test-strategy.md`     | 何をテストするか              |
-| `working-directory.md` | 作業ディレクトリの扱い        |
+| ルール                 | 内容                                           |
+| ---------------------- | ---------------------------------------------- |
+| `javascript.md`        | JavaScript のコーディング規約                  |
+| `typescript.md`        | TypeScript のコーディング規約                  |
+| `test.md`              | Vitest で書くテストの書き方                    |
+| `test-strategy.md`     | 何をテストするか                               |
+| `spec-test.md`         | `spec.ts` と `specIt` で書く仕様テストの書き方 |
+| `working-directory.md` | 作業ディレクトリの扱い                         |
 
 ### プラグイン
 
@@ -88,12 +90,13 @@ claude plugin install workflow@harness
 `js-toolchain` のフックは、プロジェクトの `node_modules/.bin` にある oxlint・oxfmt だけを使い、無ければ何もしない。
 `npx` を止めるのは、プロジェクトのルートに `pnpm-lock.yaml` があるときだけ。
 
-## lint のパッケージ
+## パッケージ
 
 使い方はそれぞれの README を参照する。
 
 - [packages/code-lint](packages/code-lint/README.md)
 - [packages/docs-lint](packages/docs-lint/README.md)
+- [packages/spec](packages/spec/README.md)
 
 ## 開発
 
