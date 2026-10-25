@@ -37,6 +37,7 @@ import { useFlatMathMinMax } from "./rules/use-flat-math-min-max.ts";
 import { useMocksRecord } from "./rules/use-mocks-record.ts";
 import { useParseIntRadix } from "./rules/use-parse-int-radix.ts";
 import { useSemanticElements } from "./rules/use-semantic-elements.ts";
+import { useServiceFileName } from "./rules/use-service-file-name.ts";
 import { useServiceHandleOnly } from "./rules/use-service-handle-only.ts";
 import { useServiceSingleComponent } from "./rules/use-service-single-component.ts";
 import { useSimpleNumberKeys } from "./rules/use-simple-number-keys.ts";
@@ -82,6 +83,7 @@ export default definePlugin({
     "use-mocks-record": useMocksRecord,
     "use-parse-int-radix": useParseIntRadix,
     "use-semantic-elements": useSemanticElements,
+    "use-service-file-name": useServiceFileName,
     "use-service-handle-only": useServiceHandleOnly,
     "use-service-single-component": useServiceSingleComponent,
     "use-simple-number-keys": useSimpleNumberKeys,
