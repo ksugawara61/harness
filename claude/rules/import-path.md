@@ -37,6 +37,16 @@ import { TodoItem } from "./features/todo-item/index.tsx";
 import { useService } from "./service.ts";
 ```
 
+フィーチャーの中の `shared/` も、同じフィーチャーの内側のため相対パスで書きます。
+`shared/` の共通ロジックは、一番近い親のフィーチャーの `shared/` から相対パスでだけ import します（`feature-directory.md`）。
+同じ単位の内側でも、`shared/` を `@/` で import しないでください。
+
+```ts
+// src/features/todo-page/features/todo-list/features/todo-item/service.ts
+// Good: 一番近い親の shared/ を相対パスで import する
+import { filterTodos } from "../../shared/filter-todos.ts";
+```
+
 ## 境界を越える import は `@/` で書く
 
 別のフィーチャー・別のレイヤー・`src/` 直下のファイルを参照するときは、`@/` から始まるパスで書いてください。
@@ -72,5 +82,6 @@ import { Button } from "../../ui/button/index.tsx";
 `@ksugawara61/code-lint` の `no-relative-cross-boundary` で、境界を越える相対パスの import を報告できます。
 報告のメッセージに、書き換え先の `@/` のパスが出ます。
 `no-cross-feature-import` も `@/` のパスを解決するため、エイリアスで書いてもフィーチャーの親子の制約は外れません。
+`use-nearest-shared-import` は、`shared/` を `@/` で import すると報告します。
 
 どのパスに当てるか、エイリアスの解決先をどこにするかは、リポジトリの oxlint の `overrides` とルールのオプション（`aliases`）に従ってください。

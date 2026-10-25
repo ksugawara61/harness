@@ -69,6 +69,10 @@ ruleTester.run("use-feature-directory", useFeatureDirectory, {
       name: "components/ の直下のファイルは許可する",
     },
     {
+      ...at("todo-page/features/todo-list/shared/filter/by-status.ts"),
+      name: "shared/ の中のファイルはディレクトリに分けても許可する",
+    },
+    {
       ...at("shared/scrap-chat/features/scrap-chat-item/index.tsx"),
       name: "グループの中のフィーチャーも同じ構成で許可する",
     },

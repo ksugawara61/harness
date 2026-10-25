@@ -27,6 +27,9 @@ const DEFAULT_ALIASES: Record<string, string> = { "@/": "src/" };
 /** 各フィーチャーのサブフィーチャーを置くディレクトリの名前 */
 const SUB_FEATURES_DIR = "features";
 
+/** 各フィーチャーの中で、配下のサブフィーチャーに共通のロジックを置くディレクトリの名前 */
+export const SHARED_DIR = "shared";
+
 export type FeaturePath = {
   /**
    * パスが属するフィーチャーのディレクトリ（featuresDir からのセグメント）。
@@ -125,3 +128,22 @@ export const isDirectSubFeature = (parent: string[], child: string[]) =>
 
 export const isSameFeature = (a: string[], b: string[]) =>
   a.length === b.length && a.every((segment, index) => b[index] === segment);
+
+/** ancestor が feature 自身か、feature を配下に持つ親のフィーチャーか */
+export const isSelfOrAncestorFeature = (
+  ancestor: string[],
+  feature: string[],
+) =>
+  ancestor.length <= feature.length &&
+  ancestor.every((segment, index) => feature[index] === segment);
+
+/**
+ * feature 自身と親のフィーチャーを、近い順に返す。
+ * `todo-page/features/todo-list` は [["todo-page", "features", "todo-list"], ["todo-page"]]。
+ * グループの中のフィーチャーは、グループのディレクトリをフィーチャーとみなさない
+ */
+export const selfAndAncestorFeatures = (feature: string[], inGroup: boolean) =>
+  Array.from(
+    { length: Math.ceil((feature.length - (inGroup ? 1 : 0)) / 2) },
+    (_, index) => feature.slice(0, feature.length - index * 2),
+  );

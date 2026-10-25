@@ -131,6 +131,8 @@ src/features/
     ├── service.ts
     ├── components/
     │   └── todo-header.tsx # ロジックの無い部品。1 ファイルずつ直接置く
+    ├── shared/
+    │   └── format-date.ts  # 配下で共通のロジック。一番近い親の shared/ から相対パスで import する
     └── features/
         └── todo-list/      # ロジックを持つ部品（サブフィーチャー）。同じ構成で入れ子にできる
             ├── index.tsx
@@ -139,17 +141,23 @@ src/features/
                 └── todo-item/
 ```
 
-| ルール                       | 内容                                                                                                                           |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/` と `components/` だけにする       |
-| `no-cross-feature-import`    | フィーチャーからは同じフィーチャーと直下のサブフィーチャーだけを、features の外からは features 直下のフィーチャーだけを import |
-| `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                        |
-| `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く           |
-| `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                      |
+| ルール                       | 内容                                                                                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/` と `components/` と `shared/` だけにする           |
+| `no-cross-feature-import`    | フィーチャーからは同じフィーチャーと直下のサブフィーチャー・親の `shared/` だけを、features の外からは features 直下のフィーチャーだけを import |
+| `use-nearest-shared-import`  | `shared/` は、一番近い親のフィーチャーの `shared/` だけを相対パスで import する                                                                 |
+| `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                                         |
+| `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く                            |
+| `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                                       |
 
 `no-cross-feature-import` は、ページ同士やサブフィーチャー同士の横の import を報告する。
 ほかのフィーチャーから使われるフィーチャーはページではない。使う側の `features/` へ移す。
 import のパスは、相対パスと `aliases` に挙げたパスエイリアス（既定は `@/` → `src/`）を解決して見る。
+
+`use-nearest-shared-import` は、import するファイルのフィーチャー自身と親のフィーチャーのうち、`shared/` を持つ一番近いものの `shared/` だけを許す。
+兄弟や子のフィーチャーの `shared/`、より近い `shared/` があるときの遠い親の `shared/`、features の外からの `shared/` の import を報告する。
+一番近い `shared/` でも、パスエイリアスで書いた import は報告する。
+一番近い `shared/` を決めるため、各フィーチャーの `shared/` の有無をファイルシステムで見る。
 
 `no-relative-cross-boundary` は、`aliases` の解決先のディレクトリ（既定は `src/`）の中を次の単位に分け、単位を越える相対パスの import を報告する。
 報告のメッセージには、書き換え先のエイリアスのパスが出る。
@@ -163,13 +171,18 @@ import のパスは、相対パスと `aliases` に挙げたパスエイリア�
 expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["useParams", "useSearch"]` のように指定する。
 `Route.useParams()` のようなメンバー呼び出しは、プロパティの名前で判定する。
 
-`use-feature-directory`・`no-cross-feature-import`・`no-relative-cross-boundary` は、次のオプションを取る。
+フィーチャーの構成を見る次のルールは、共通のオプションを取る。
+
+- `use-feature-directory`
+- `no-cross-feature-import`
+- `use-nearest-shared-import`
+- `no-relative-cross-boundary`
 
 | オプション    | 既定値             | 内容                                                                                                                 |
 | ------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | `featuresDir` | `"src/features"`   | フィーチャーを置くディレクトリ。oxlint を動かすディレクトリからの相対パス                                            |
 | `groups`      | `[]`               | features 直下でフィーチャーをまとめるディレクトリ（`["shared"]` など）。中のフィーチャーはどこからでも import できる |
-| `aliases`     | `{ "@/": "src/" }` | `no-cross-feature-import`・`no-relative-cross-boundary` だけ。パスエイリアスの接頭辞と解決先のディレクトリ           |
+| `aliases`     | `{ "@/": "src/" }` | `use-feature-directory` 以外。パスエイリアスの接頭辞と解決先のディレクトリ                                           |
 | `allowDirs`   | `[]`               | `use-feature-directory` だけ。フィーチャーの中に置いてよいほかのディレクトリ（`["graphqls"]` など）                  |
 
 ```jsonc
@@ -181,6 +194,7 @@ expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["usePar
       "rules": {
         "code-lint/no-cross-feature-import": "error",
         "code-lint/no-relative-cross-boundary": "error",
+        "code-lint/use-nearest-shared-import": "error",
       },
     },
     {

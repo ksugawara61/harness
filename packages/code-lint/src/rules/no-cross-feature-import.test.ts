@@ -59,6 +59,14 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
     },
     {
       ...from(
+        "features/todo-page/features/todo-add/index.tsx",
+        'import { filterTodos } from "../todo-list/shared/filter.ts";',
+      ),
+      errors: 1,
+      name: "兄弟のサブフィーチャーの shared/ の import は報告する",
+    },
+    {
+      ...from(
         "features/todo-page/mocks.ts",
         'export { TodoListMocks } from "../todo-list/mocks.ts";',
       ),
@@ -119,6 +127,13 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
         'import { TodoItem } from "./features/todo-item";',
       ),
       name: "サブフィーチャーからその直下のサブフィーチャーの import は許可する",
+    },
+    {
+      ...from(
+        "features/todo-page/features/todo-list/features/todo-item/service.ts",
+        'import { formatDate } from "../../../../shared/format.ts";\nimport { filterTodos } from "../../shared/filter.ts";',
+      ),
+      name: "親のフィーチャーの shared/ の import は許可する（どの shared/ に限るかは use-nearest-shared-import が見る）",
     },
     {
       ...from(

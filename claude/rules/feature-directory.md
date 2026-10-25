@@ -77,9 +77,63 @@ src/features/todo-page/features/todo-list/components/
 
 複数のアプリやフィーチャーで共通に使う見た目だけの部品（ボタン・入力欄など）は、フィーチャーではなく `src/ui/` などに置きます。
 
+## 配下で共通のロジックは `shared/` に置く
+
+フィーチャーとそのサブフィーチャーで共通に使うロジック（関数・型・定数など）は、使う側すべてに一番近い共通の親のフィーチャーの `shared/` に置いてください。
+`shared/` の中は、ファイルをそのまま置いても、ディレクトリに分けてもかまいません。
+見た目の部品は `shared/` に置かず、`components/` か `features/` に置きます。
+
+```text
+// Good: todo-list と todo-item で使う絞り込みは todo-list の shared/ に置く
+src/features/todo-page/
+├── shared/
+│   └── format-date.ts        // todo-add と todo-list の配下で使う
+└── features/
+    ├── todo-add/
+    └── todo-list/
+        ├── shared/
+        │   └── filter-todos.ts   // todo-list と todo-item で使う
+        └── features/
+            └── todo-item/
+
+// Bad: todo-list の配下でしか使わないロジックをページの shared/ に置いている
+src/features/todo-page/
+├── shared/
+│   └── filter-todos.ts       // todo-list と todo-item だけが使う
+└── features/
+    └── todo-list/
+```
+
+## `shared/` は一番近い親のものだけを相対パスで import する
+
+`shared/` を import できるのは、import するファイルのフィーチャー自身とその親のフィーチャーのうち、`shared/` を持つ一番近いものの `shared/` だけです。
+import は相対パスで書き、`@/` のパスエイリアスでは書きません。
+相対パスの `../` の深さから、どの階層の `shared/` を使っているかがわかります。
+
+次の import はしないでください。
+
+- 兄弟や子のサブフィーチャーの `shared/` の import
+- 間により近い `shared/` があるときの、遠い親のフィーチャーの `shared/` の import
+- features の外（ルーティングのファイルなど）からの `shared/` の import
+
+```ts
+// src/features/todo-page/features/todo-list/features/todo-item/service.ts
+// Good: 一番近い親（todo-list）の shared/ を相対パスで import する
+import { filterTodos } from "../../shared/filter-todos.ts";
+
+// Bad: 一番近い shared/ でも、パスエイリアスで書いている
+import { filterTodos } from "@/features/todo-page/features/todo-list/shared/filter-todos.ts";
+// Bad: 間に todo-list の shared/ があるのに、ページの shared/ を import している
+import { formatDate } from "../../../../shared/format-date.ts";
+```
+
+遠い親の `shared/` のロジックを使いたくなったら、一番近い `shared/` から re-export しないでください。
+使う側すべてに一番近い共通の親が遠い親なら、近い方の `shared/` のロジックも遠い親の `shared/` に移します。
+近い `shared/` だけで足りるなら、そのロジックを近い `shared/` に移します。
+
 ## import はフィーチャーの親子の間だけにする
 
-フィーチャーから import するのは、同じフィーチャーのファイルと、直下のサブフィーチャーだけにしてください。
+フィーチャーから import するのは、同じフィーチャーのファイルと、直下のサブフィーチャーと、一番近い親の `shared/` だけにしてください。
 ページ同士・サブフィーチャー同士の横の import や、子から親への import はしません。
 features の外（ルーティングのファイルなど）からは、features 直下のページだけを import します。
 ルーティングのライブラリを問わず、ルートのファイルはページを `@/features/<page>/...` から import して描画するだけにします（`routing.md`）。
@@ -91,12 +145,14 @@ features の外（ルーティングのファイルなど）からは、features
 
 `@ksugawara61/code-lint` の次のルールで、この構成を lint で強制できます。
 
-| ルール                    | 検査すること                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------- |
-| `use-feature-directory`   | フィーチャーの中のディレクトリが `features/<name>/` と `components/` だけか         |
-| `no-cross-feature-import` | 同じフィーチャーと直下のサブフィーチャー、features の外からはページだけを import か |
-| `no-logic-in-components`  | `components/` の部品がフックを呼ばないか                                            |
+| ルール                      | 検査すること                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| `use-feature-directory`     | フィーチャーの中のディレクトリが `features/<name>/` と `components/` と `shared/` だけか         |
+| `no-cross-feature-import`   | 同じフィーチャーと直下のサブフィーチャー・親の `shared/`、features の外からはページだけを import |
+| `use-nearest-shared-import` | `shared/` を import するのが一番近い親の `shared/` だけで、相対パスで書いているか                |
+| `no-logic-in-components`    | `components/` の部品がフックを呼ばないか                                                         |
 
-`no-cross-feature-import` は、相対パスと `@/` のパスエイリアスのどちらで書いた import も検査します。
+`no-cross-feature-import`・`use-nearest-shared-import` は、相対パスと `@/` のパスエイリアスのどちらで書いた import も検査します。
+`use-nearest-shared-import` は、一番近い `shared/` を決めるために、各フィーチャーの `shared/` の有無をファイルシステムで見ます。
 
 どのパスに当てるかは、リポジトリの oxlint の `overrides` に従ってください。
