@@ -9,10 +9,11 @@
     "aria-query": "catalog:",
     "graphql": "catalog:"
   },
-  "description": "Shared oxlint and oxfmt config with a JS plugin that ports Biome rules, plus GraphQL and JSON key-order checks",
+  "description": "Shared oxlint and oxfmt config with a JS plugin that ports Biome rules, dependency-cruiser rules for feature directories, plus GraphQL and JSON key-order checks",
   "devDependencies": {
     "@types/aria-query": "catalog:",
     "@types/node": "catalog:",
+    "dependency-cruiser": "catalog:",
     "oxlint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -21,6 +22,10 @@
     "node": ">=22"
   },
   "exports": {
+    "./dependency-cruiser": {
+      "types": "./dist/dependency-cruiser.d.ts",
+      "default": "./dist/dependency-cruiser.js"
+    },
     "./oxfmtrc.json": "./oxfmtrc.json",
     "./oxlintrc.json": "./oxlintrc.json",
     "./package.json": "./package.json",
@@ -38,6 +43,7 @@
   "homepage": "https://github.com/ksugawara61/harness/tree/main/packages/code-lint#readme",
   "keywords": [
     "biome",
+    "dependency-cruiser",
     "graphql",
     "lint",
     "oxfmt",
@@ -47,7 +53,13 @@
   "license": "MIT",
   "name": "@ksugawara61/code-lint",
   "peerDependencies": {
+    "dependency-cruiser": "^18.6.0",
     "oxlint": "^1.87.0"
+  },
+  "peerDependenciesMeta": {
+    "dependency-cruiser": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public",

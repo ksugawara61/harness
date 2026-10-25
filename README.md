@@ -3,13 +3,13 @@
 複数のプロジェクトで共通に使う、lint の設定と Claude Code の設定をまとめて管理するリポジトリ。
 curio で育てた lint のルールと Claude Code の設定を、ほかのプロジェクトにも同じ形で当てられるようにする。
 
-| 置き場所                      | 中身                                                                         | 配り方                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `packages/code-lint`          | oxlint・oxfmt の共通設定と oxlint の JS プラグイン、GraphQL・JSON の検査 CLI | npm（`@ksugawara61/code-lint`）                          |
-| `packages/docs-lint`          | Markdown 文書の textlint・markdownlint・文字数上限の検査 CLI                 | npm（`@ksugawara61/docs-lint`）                          |
-| `packages/spec`               | 仕様を `spec.ts` で宣言し、Vitest のテストと対応付けて網羅を検査する API     | npm（`@ksugawara61/spec`）                               |
-| `claude/`                     | Claude Code のユーザー設定（`settings.json`）とルール（`rules/`）            | clone して `scripts/install.sh` で `~/.claude` に配置    |
-| `plugins/`・`.claude-plugin/` | スキル・サブエージェント・フック                                             | Claude Code のプラグイン（マーケットプレイス `harness`） |
+| 置き場所                      | 中身                                                                                                      | 配り方                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `packages/code-lint`          | oxlint・oxfmt の共通設定と oxlint の JS プラグイン、dependency-cruiser のルール、GraphQL・JSON の検査 CLI | npm（`@ksugawara61/code-lint`）                          |
+| `packages/docs-lint`          | Markdown 文書の textlint・markdownlint・文字数上限の検査 CLI                                              | npm（`@ksugawara61/docs-lint`）                          |
+| `packages/spec`               | 仕様を `spec.ts` で宣言し、Vitest のテストと対応付けて網羅を検査する API                                  | npm（`@ksugawara61/spec`）                               |
+| `claude/`                     | Claude Code のユーザー設定（`settings.json`）とルール（`rules/`）                                         | clone して `scripts/install.sh` で `~/.claude` に配置    |
+| `plugins/`・`.claude-plugin/` | スキル・サブエージェント・フック                                                                          | Claude Code のプラグイン（マーケットプレイス `harness`） |
 
 プラグインにはルールと `settings.json` を入れられない。
 そのため、プラグインにできるものは `plugins/` に、できないものは `claude/` に置く。

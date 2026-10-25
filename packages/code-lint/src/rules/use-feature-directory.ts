@@ -7,7 +7,7 @@ import {
 } from "../utils/feature-path.ts";
 
 type Options = FeatureOptions & {
-  /** フィーチャーの中に置いてよい、features・components 以外のディレクトリ（`graphqls` など） */
+  /** フィーチャーの中に置いてよい、features・shared・components 以外のディレクトリ（`graphqls` など） */
   allowDirs?: string[];
 };
 
@@ -16,14 +16,15 @@ const COMPONENTS_DIR = "components";
 const MESSAGE_OUTSIDE_FEATURE =
   "features 直下（グループの直下）にはフィーチャーのディレクトリだけを置き、ファイルはフィーチャーの中に置いてください";
 const MESSAGE_DIR =
-  "フィーチャーの中のディレクトリは、サブフィーチャーを置く features/<name>/ と、ロジックの無い部品を置く components/ だけにしてください";
+  "フィーチャーの中のディレクトリは、サブフィーチャーを置く features/<name>/、配下に共通の部品を置く shared/<name>/、ロジックの無い部品を置く components/ だけにしてください";
 const MESSAGE_COMPONENTS =
   "components/ には部品を 1 ファイルずつ直接置いてください（components/<name>.tsx）。ディレクトリにするなら features/ のサブフィーチャーにしてください";
 
 // フィーチャーのディレクトリ構成を強制する。
 // - features 直下にはフィーチャーのディレクトリだけを置く
 // - フィーチャーの中のファイルは、フィーチャーのルート・components/ の直下・
-//   サブフィーチャー（features/<name>/、同じ構成で入れ子にできる）のどれかに置く
+//   サブフィーチャー（features/<name>/）・共有フィーチャー（shared/<name>/）のどれかに置く。
+//   サブフィーチャーと共有フィーチャーは、同じ構成で入れ子にできる
 // どのファイルを対象にするかは、利用側の overrides で featuresDir の中のパスに当てる
 export const useFeatureDirectory = defineRule({
   create: (context) => {
