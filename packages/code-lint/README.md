@@ -201,6 +201,7 @@ src/features/
 | `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                                              |
 | `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く                                 |
 | `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                                            |
+| `use-own-fragment`           | `readFragment` には、同じディレクトリの `fragment.ts` から import した GraphQL の fragment だけを渡す                                                |
 
 `no-cross-feature-import` は、ページ同士やサブフィーチャー同士の横の import を報告する。
 ほかのフィーチャーから使われるフィーチャーはページではない。使う側の `features/` へ移す。
@@ -226,6 +227,14 @@ import のパスは、相対パスと `aliases` に挙げたパスエイリア�
 パスのパラメーターを読むフックなど、ルートのファイルで呼んでよいフックを `allowHooks` に挙げる。
 expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["useParams", "useSearch"]` のように指定する。
 `Route.useParams()` のようなメンバー呼び出しは、プロパティの名前で判定する。
+
+`use-own-fragment` は、GraphQL の fragment colocation の規約を保つ。
+サブフィーチャーは描画に使うフィールドを自分の `fragment.ts` に fragment で宣言し、親のクエリがそれをスプレッドで取り込む。
+親は結果を masked のまま子に渡し、子だけが `readFragment` で読む。
+`readFragment` の第 1 引数が、同じディレクトリの `fragment.ts` から相対パスで import した識別子でなければ報告する。
+`fragment.ts` の中で宣言した fragment は許す。
+`fragmentFile` オプションでファイルの名前（拡張子を除く。既定は `"fragment"`）を、`functions` オプションで見る関数（既定は `["readFragment"]`）を変えられる。
+`src/features/**` のように、フィーチャーのファイルに当てる。
 
 フィーチャーの構成を見る次のルールは、共通のオプションを取る。
 

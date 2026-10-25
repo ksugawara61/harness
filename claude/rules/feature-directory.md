@@ -12,6 +12,7 @@ paths:
 - フィーチャーの中のファイル（`service.ts`・`spec.ts`・`stories.tsx` など）の書き方 → `spec-test.md`・`storybook.md`
 - ルーティングのディレクトリ（`src/app/`・`src/routes/` など）との役割分担 → `routing.md`
 - import のパス（相対パスと `@/`）の書き方 → `import-path.md`
+- サブフィーチャーが使う GraphQL のフィールド（fragment）の置き方 → `graphql-fragment.md`
 - リポジトリ側に独自のディレクトリ構成の規約がある場合は、そちらを優先してください
 
 ## features 直下にはページ相当のフィーチャーだけを置く
@@ -43,6 +44,7 @@ src/features/
 フックや API の呼び出し（`useService`・`useQuery` など）を持つ部品は、親のフィーチャーの `features/<name>/` にサブフィーチャーとして置いてください。
 サブフィーチャーの中の構成は、ページのフィーチャーと同じです（`index.tsx`・`service.ts`・`spec.ts`・`test.tsx`・`stories.tsx`・`mocks.ts` など）。
 サブフィーチャーの部品も、同じ規則でさらに `features/` と `components/` に置けます。
+GraphQL の fragment（`fragment.ts`）を持つ部品もサブフィーチャーにします。`readFragment` を `useService` で呼ぶためです（`graphql-fragment.md`）。
 
 ```text
 // Good: 1 件分の完了・削除を持つ todo-item は todo-list のサブフィーチャー
