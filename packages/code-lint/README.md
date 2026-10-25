@@ -117,6 +117,63 @@ GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` ``
 `use-service-file-name` は、`useService` の宣言と import の両方を見るため、`src/features/**` のように `.ts` と `.tsx` を含むパスに当てる。
 `use-service.ts`・`hooks.ts` などに置くと、ファイル名がフィーチャーごとにばらつくため、`service.ts` に揃える。
 
+フィーチャーのディレクトリ構成の規約のルール。
+features 直下にはページ相当のフィーチャーだけを置く。
+ページの部品は、ロジックがあれば親の `features/<name>/` にサブフィーチャーとして、ロジックが無ければ親の `components/<name>.tsx` に置く。
+
+```text
+src/features/
+└── todo-page/              # ページ。features の外（ルーティングなど）から import する
+    ├── index.tsx
+    ├── service.ts
+    ├── components/
+    │   └── todo-header.tsx # ロジックの無い部品。1 ファイルずつ直接置く
+    └── features/
+        └── todo-list/      # ロジックを持つ部品（サブフィーチャー）。同じ構成で入れ子にできる
+            ├── index.tsx
+            ├── service.ts
+            └── features/
+                └── todo-item/
+```
+
+| ルール                    | 内容                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `use-feature-directory`   | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/` と `components/` だけにする       |
+| `no-cross-feature-import` | フィーチャーからは同じフィーチャーと直下のサブフィーチャーだけを、features の外からは features 直下のフィーチャーだけを import |
+| `no-logic-in-components`  | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                        |
+
+`no-cross-feature-import` は、ページ同士やサブフィーチャー同士の横の import を報告する。
+ほかのフィーチャーから使われるフィーチャーはページではない。使う側の `features/` へ移す。
+import のパスは相対パスだけを見て、パスエイリアス（`@/features/...`）は解決しない。
+
+`use-feature-directory`・`no-cross-feature-import` は、次のオプションを取る。
+
+| オプション    | 既定値           | 内容                                                                                                                 |
+| ------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `featuresDir` | `"src/features"` | フィーチャーを置くディレクトリ。oxlint を動かすディレクトリからの相対パス                                            |
+| `groups`      | `[]`             | features 直下でフィーチャーをまとめるディレクトリ（`["shared"]` など）。中のフィーチャーはどこからでも import できる |
+| `allowDirs`   | `[]`             | `use-feature-directory` だけ。フィーチャーの中に置いてよいほかのディレクトリ（`["graphqls"]` など）                  |
+
+```jsonc
+// .oxlintrc.json
+{
+  "overrides": [
+    {
+      "files": ["src/**"],
+      "rules": { "code-lint/no-cross-feature-import": "error" },
+    },
+    {
+      "files": ["src/features/**"],
+      "rules": { "code-lint/use-feature-directory": "error" },
+    },
+    {
+      "files": ["src/features/**/components/**"],
+      "rules": { "code-lint/no-logic-in-components": "error" },
+    },
+  ],
+}
+```
+
 `specIt(spec, key, { given, when, yields })` の形で仕様テストを書く規約のルール。
 `specIt` は [spec](../spec/README.md) が提供する。
 

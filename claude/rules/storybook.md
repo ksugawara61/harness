@@ -24,7 +24,7 @@ paths:
 ## meta は `satisfies Meta` で書き、`title` を書かない
 
 ```tsx
-// src/features/todo-list/stories.tsx
+// src/features/todo-page/features/todo-list/stories.tsx
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { TodoList } from "./index.tsx";
 import { TodoListMocks } from "./mocks.ts";

@@ -2,6 +2,7 @@ import { definePlugin } from "@oxlint/plugins";
 import { cognitiveComplexity } from "./rules/cognitive-complexity.ts";
 import { graphqlRules } from "./rules/graphql.ts";
 import { maxLines } from "./rules/max-lines.ts";
+import { noCrossFeatureImport } from "./rules/no-cross-feature-import.ts";
 import { noDynamicNamespaceImportAccess } from "./rules/no-dynamic-namespace-import-access.ts";
 import { noEventInYields } from "./rules/no-event-in-yields.ts";
 import { noExpectInGivenWhen } from "./rules/no-expect-in-given-when.ts";
@@ -10,6 +11,7 @@ import { noFlatMapIdentity } from "./rules/no-flat-map-identity.ts";
 import { noHandlerInComponent } from "./rules/no-handler-in-component.ts";
 import { noImplicitAnyLet } from "./rules/no-implicit-any-let.ts";
 import { noInlineHandlerLogic } from "./rules/no-inline-handler-logic.ts";
+import { noLogicInComponents } from "./rules/no-logic-in-components.ts";
 import { noMisplacedListElements } from "./rules/no-misplaced-list-elements.ts";
 import { noMultipleFeatureExports } from "./rules/no-multiple-feature-exports.ts";
 import { noRawSetterReturn } from "./rules/no-raw-setter-return.ts";
@@ -33,6 +35,7 @@ import { onlyUseServiceHooks } from "./rules/only-use-service-hooks.ts";
 import { sortJsxAttributes } from "./rules/sort-jsx-attributes.ts";
 import { sortKeys } from "./rules/sort-keys.ts";
 import { useExpressionWhen } from "./rules/use-expression-when.ts";
+import { useFeatureDirectory } from "./rules/use-feature-directory.ts";
 import { useFlatMathMinMax } from "./rules/use-flat-math-min-max.ts";
 import { useMocksRecord } from "./rules/use-mocks-record.ts";
 import { useParseIntRadix } from "./rules/use-parse-int-radix.ts";
@@ -49,6 +52,7 @@ export default definePlugin({
     ...graphqlRules,
     "cognitive-complexity": cognitiveComplexity,
     "max-lines": maxLines,
+    "no-cross-feature-import": noCrossFeatureImport,
     "no-dynamic-namespace-import-access": noDynamicNamespaceImportAccess,
     "no-event-in-yields": noEventInYields,
     "no-expect-in-given-when": noExpectInGivenWhen,
@@ -57,6 +61,7 @@ export default definePlugin({
     "no-handler-in-component": noHandlerInComponent,
     "no-implicit-any-let": noImplicitAnyLet,
     "no-inline-handler-logic": noInlineHandlerLogic,
+    "no-logic-in-components": noLogicInComponents,
     "no-misplaced-list-elements": noMisplacedListElements,
     "no-multiple-feature-exports": noMultipleFeatureExports,
     "no-raw-setter-return": noRawSetterReturn,
@@ -80,6 +85,7 @@ export default definePlugin({
     "sort-jsx-attributes": sortJsxAttributes,
     "sort-keys": sortKeys,
     "use-expression-when": useExpressionWhen,
+    "use-feature-directory": useFeatureDirectory,
     "use-flat-math-min-max": useFlatMathMinMax,
     "use-mocks-record": useMocksRecord,
     "use-parse-int-radix": useParseIntRadix,

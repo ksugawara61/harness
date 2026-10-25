@@ -25,7 +25,7 @@ pnpm add -D @ksugawara61/spec vitest
 ## 仕様を宣言する
 
 ```ts
-// src/features/todo-add/spec.ts
+// src/features/todo-page/features/todo-add/spec.ts
 import { defineSpec } from "@ksugawara61/spec";
 
 export const spec = defineSpec("todo-add", {
@@ -77,7 +77,7 @@ formatSpecCase({
 仕様文が実装の真上に並ぶため、テストファイルを単体で読んでも「何の振る舞いを確認しているか」が分かる。
 
 ```tsx
-// src/features/todo-add/test.tsx
+// src/features/todo-page/features/todo-add/test.tsx
 import { specIt } from "@ksugawara61/spec/vitest";
 import { spec } from "./spec";
 
