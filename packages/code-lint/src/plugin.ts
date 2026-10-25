@@ -39,8 +39,10 @@ import { sortKeys } from "./rules/sort-keys.ts";
 import { useExpressionWhen } from "./rules/use-expression-when.ts";
 import { useFeatureDirectory } from "./rules/use-feature-directory.ts";
 import { useFlatMathMinMax } from "./rules/use-flat-math-min-max.ts";
+import { useGraphqlOperationFile } from "./rules/use-graphql-operation-file.ts";
 import { useMocksRecord } from "./rules/use-mocks-record.ts";
 import { useNearestSharedImport } from "./rules/use-nearest-shared-import.ts";
+import { useOwnFragment } from "./rules/use-own-fragment.ts";
 import { useParseIntRadix } from "./rules/use-parse-int-radix.ts";
 import { useSemanticElements } from "./rules/use-semantic-elements.ts";
 import { useServiceFileName } from "./rules/use-service-file-name.ts";
@@ -92,8 +94,10 @@ export default definePlugin({
     "use-expression-when": useExpressionWhen,
     "use-feature-directory": useFeatureDirectory,
     "use-flat-math-min-max": useFlatMathMinMax,
+    "use-graphql-operation-file": useGraphqlOperationFile,
     "use-mocks-record": useMocksRecord,
     "use-nearest-shared-import": useNearestSharedImport,
+    "use-own-fragment": useOwnFragment,
     "use-parse-int-radix": useParseIntRadix,
     "use-semantic-elements": useSemanticElements,
     "use-service-file-name": useServiceFileName,

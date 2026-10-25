@@ -48,6 +48,11 @@ ruleTester.run("use-feature-directory", useFeatureDirectory, {
     {
       ...at("todo-page/graphqls/todos-query/index.ts"),
       errors: 1,
+      name: "graphqls/ の中のディレクトリは報告する",
+    },
+    {
+      ...at("todo-page/assets/logo.png.ts"),
+      errors: 1,
       name: "allowDirs に無いディレクトリは報告する",
     },
     {
@@ -79,6 +84,16 @@ ruleTester.run("use-feature-directory", useFeatureDirectory, {
       name: "components/ の直下のファイルは許可する",
     },
     {
+      ...at("todo-page/graphqls/todos-query.ts"),
+      name: "graphqls/ の直下のファイルは許可する",
+    },
+    {
+      ...at(
+        "todo-page/features/todo-list/features/todo-item/graphqls/todo-item-fragment.ts",
+      ),
+      name: "サブフィーチャーの graphqls/ の直下のファイルも許可する",
+    },
+    {
       ...at("todo-page/shared/todo-error/index.tsx"),
       name: "shared/<name>/ の共有フィーチャーのファイルは許可する",
     },
@@ -98,9 +113,9 @@ ruleTester.run("use-feature-directory", useFeatureDirectory, {
     },
     {
       code,
-      filename: join(featuresDir, "todo-page/graphqls/todos-query/index.ts"),
-      name: "allowDirs に挙げたディレクトリは許可する",
-      options: [{ allowDirs: ["graphqls"], featuresDir }],
+      filename: join(featuresDir, "todo-page/assets/icons/logo.ts"),
+      name: "allowDirs に挙げたディレクトリは中も許可する",
+      options: [{ allowDirs: ["assets"], featuresDir }],
     },
     {
       code,
