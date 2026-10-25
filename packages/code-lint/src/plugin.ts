@@ -41,6 +41,7 @@ import { useServiceFileName } from "./rules/use-service-file-name.ts";
 import { useServiceHandleOnly } from "./rules/use-service-handle-only.ts";
 import { useServiceSingleComponent } from "./rules/use-service-single-component.ts";
 import { useSimpleNumberKeys } from "./rules/use-simple-number-keys.ts";
+import { useStoriesFile } from "./rules/use-stories-file.ts";
 
 export default definePlugin({
   meta: { name: "code-lint" },
@@ -87,5 +88,6 @@ export default definePlugin({
     "use-service-handle-only": useServiceHandleOnly,
     "use-service-single-component": useServiceSingleComponent,
     "use-simple-number-keys": useSimpleNumberKeys,
+    "use-stories-file": useStoriesFile,
   },
 });
