@@ -102,17 +102,20 @@ GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` ``
 
 フックとロジックを `useService` フックへまとめ、コンポーネントと同じ場所に置く規約のルール。
 
-| ルール                                 | 内容                                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------- |
-| `only-use-service-hooks`               | コンポーネントでは `useService` 以外のフック（`use*`）を呼ばない            |
-| `no-handler-in-component`              | コンポーネント内で変数を宣言しない（`const { … } = useService()` だけ許す） |
-| `no-inline-handler-logic`              | JSX の `on*` props に、本体がブロックの関数を直接書かない                   |
-| `use-service-single-component`         | 1 ファイルで `useService()` を呼ぶコンポーネントは 1 つまで                 |
-| `use-service-handle-only`              | `useService` 内の関数変数の名前は `handleXxx` にする                        |
-| `no-raw-setter-return`                 | `useService` の return で `useState` の setter をそのまま返さない           |
-| `no-expo-router-in-use-service-return` | `useRouter()` の値を `useService` の return に含めない                      |
-| `no-multiple-feature-exports`          | 1 つのファイルから export するのは 1 つだけ（feature の入口に当てる）       |
-| `use-service-file-name`                | `useService` は `service.ts` に置き、`service` から import する             |
+| ルール                            | 内容                                                                             |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| `only-use-service-hooks`          | コンポーネントでは `useService` 以外のフック（`use*`）を呼ばない                 |
+| `no-handler-in-component`         | コンポーネント内で変数を宣言しない（`const { … } = useService()` だけ許す）      |
+| `no-inline-handler-logic`         | JSX の `on*` props に、本体がブロックの関数を直接書かない                        |
+| `use-service-single-component`    | 1 ファイルで `useService()` を呼ぶコンポーネントは 1 つまで                      |
+| `use-service-handle-only`         | `useService` 内の関数変数の名前は `handleXxx` にする                             |
+| `no-raw-setter-return`            | `useService` の return で `useState` の setter をそのまま返さない                |
+| `no-router-in-use-service-return` | ルーターのフック（既定は `useRouter()`）の値を `useService` の return に含めない |
+| `no-multiple-feature-exports`     | 1 つのファイルから export するのは 1 つだけ（feature の入口に当てる）            |
+| `use-service-file-name`           | `useService` は `service.ts` に置き、`service` から import する                  |
+
+`no-router-in-use-service-return` は、`hooks` オプションでナビゲーションの値を返すフックの名前を変えられる。
+ルーティングのライブラリに合わせて、`["useRouter", "useNavigate"]`（TanStack Router）のように指定する。
 
 `use-service-file-name` は、`useService` の宣言と import の両方を見るため、`src/features/**` のように `.ts` と `.tsx` を含むパスに当てる。
 `use-service.ts`・`hooks.ts` などに置くと、ファイル名がフィーチャーごとにばらつくため、`service.ts` に揃える。
@@ -123,7 +126,7 @@ features 直下にはページ相当のフィーチャーだけを置く。
 
 ```text
 src/features/
-└── todo-page/              # ページ。features の外（ルーティングなど）から import する
+└── todo-page/              # ページ。features の外（ルーティングのファイルなど）から import する
     ├── index.tsx
     ├── service.ts
     ├── components/
@@ -136,23 +139,38 @@ src/features/
                 └── todo-item/
 ```
 
-| ルール                    | 内容                                                                                                                           |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `use-feature-directory`   | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/` と `components/` だけにする       |
-| `no-cross-feature-import` | フィーチャーからは同じフィーチャーと直下のサブフィーチャーだけを、features の外からは features 直下のフィーチャーだけを import |
-| `no-logic-in-components`  | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                        |
+| ルール                       | 内容                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/` と `components/` だけにする       |
+| `no-cross-feature-import`    | フィーチャーからは同じフィーチャーと直下のサブフィーチャーだけを、features の外からは features 直下のフィーチャーだけを import |
+| `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                        |
+| `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く           |
+| `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                      |
 
 `no-cross-feature-import` は、ページ同士やサブフィーチャー同士の横の import を報告する。
 ほかのフィーチャーから使われるフィーチャーはページではない。使う側の `features/` へ移す。
-import のパスは相対パスだけを見て、パスエイリアス（`@/features/...`）は解決しない。
+import のパスは、相対パスと `aliases` に挙げたパスエイリアス（既定は `@/` → `src/`）を解決して見る。
 
-`use-feature-directory`・`no-cross-feature-import` は、次のオプションを取る。
+`no-relative-cross-boundary` は、`aliases` の解決先のディレクトリ（既定は `src/`）の中を次の単位に分け、単位を越える相対パスの import を報告する。
+報告のメッセージには、書き換え先のエイリアスのパスが出る。
 
-| オプション    | 既定値           | 内容                                                                                                                 |
-| ------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `featuresDir` | `"src/features"` | フィーチャーを置くディレクトリ。oxlint を動かすディレクトリからの相対パス                                            |
-| `groups`      | `[]`             | features 直下でフィーチャーをまとめるディレクトリ（`["shared"]` など）。中のフィーチャーはどこからでも import できる |
-| `allowDirs`   | `[]`             | `use-feature-directory` だけ。フィーチャーの中に置いてよいほかのディレクトリ（`["graphqls"]` など）                  |
+- features 直下のフィーチャー（`groups` に挙げたディレクトリの中は、その中のフィーチャー）
+- 解決先の直下のほかのディレクトリ（`ui`・`api`・`app` などのレイヤー）
+- 解決先の直下のファイル（`main.tsx` など）。ファイルごとに 1 つの単位
+
+`no-logic-in-routes` は、ルーティングのファイルをライブラリを問わず薄く保つ。
+パスのパラメーターを読むフックなど、ルートのファイルで呼んでよいフックを `allowHooks` に挙げる。
+expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["useParams", "useSearch"]` のように指定する。
+`Route.useParams()` のようなメンバー呼び出しは、プロパティの名前で判定する。
+
+`use-feature-directory`・`no-cross-feature-import`・`no-relative-cross-boundary` は、次のオプションを取る。
+
+| オプション    | 既定値             | 内容                                                                                                                 |
+| ------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `featuresDir` | `"src/features"`   | フィーチャーを置くディレクトリ。oxlint を動かすディレクトリからの相対パス                                            |
+| `groups`      | `[]`               | features 直下でフィーチャーをまとめるディレクトリ（`["shared"]` など）。中のフィーチャーはどこからでも import できる |
+| `aliases`     | `{ "@/": "src/" }` | `no-cross-feature-import`・`no-relative-cross-boundary` だけ。パスエイリアスの接頭辞と解決先のディレクトリ           |
+| `allowDirs`   | `[]`               | `use-feature-directory` だけ。フィーチャーの中に置いてよいほかのディレクトリ（`["graphqls"]` など）                  |
 
 ```jsonc
 // .oxlintrc.json
@@ -160,11 +178,24 @@ import のパスは相対パスだけを見て、パスエイリアス（`@/feat
   "overrides": [
     {
       "files": ["src/**"],
-      "rules": { "code-lint/no-cross-feature-import": "error" },
+      "rules": {
+        "code-lint/no-cross-feature-import": "error",
+        "code-lint/no-relative-cross-boundary": "error",
+      },
     },
     {
       "files": ["src/features/**"],
       "rules": { "code-lint/use-feature-directory": "error" },
+    },
+    {
+      // TanStack Router で src/app をルーティングのディレクトリにする例
+      "files": ["src/app/**"],
+      "rules": {
+        "code-lint/no-logic-in-routes": [
+          "error",
+          { "allowHooks": ["useParams", "useSearch"] },
+        ],
+      },
     },
     {
       "files": ["src/features/**/components/**"],

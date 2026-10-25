@@ -10,11 +10,13 @@ paths:
 コードレビュー時は以下のルールに基づいて指摘してください。
 
 - フィーチャーの中のファイル（`service.ts`・`spec.ts`・`stories.tsx` など）の書き方 → `spec-test.md`・`storybook.md`
+- ルーティングのディレクトリ（`src/app/`・`src/routes/` など）との役割分担 → `routing.md`
+- import のパス（相対パスと `@/`）の書き方 → `import-path.md`
 - リポジトリ側に独自のディレクトリ構成の規約がある場合は、そちらを優先してください
 
 ## features 直下にはページ相当のフィーチャーだけを置く
 
-`src/features/` の直下には、ルーティングやアプリの入口から描画するページ相当のフィーチャーだけを置いてください。
+`src/features/` の直下には、ルーティングのファイルから描画するページ相当のフィーチャーだけを置いてください。
 ページの一部になる部品は、features 直下へ並べずにページの中に置きます。
 
 直下に部品を並べると、どれがページでどれが部品か、どの部品をどのページが使っているかがディレクトリから読み取れません。
@@ -79,7 +81,8 @@ src/features/todo-page/features/todo-list/components/
 
 フィーチャーから import するのは、同じフィーチャーのファイルと、直下のサブフィーチャーだけにしてください。
 ページ同士・サブフィーチャー同士の横の import や、子から親への import はしません。
-features の外（アプリの入口・ルーティング）からは、features 直下のページだけを import します。
+features の外（ルーティングのファイルなど）からは、features 直下のページだけを import します。
+ルーティングのライブラリを問わず、ルートのファイルはページを `@/features/<page>/...` から import して描画するだけにします（`routing.md`）。
 
 ほかのフィーチャーの部品を使いたくなったら、それは features 直下のページではありません。使う側の `features/` か `components/` に移してください。
 複数のページで使う部品は、`features/shared/` のようなまとめるディレクトリを決めて置きます。
@@ -93,5 +96,7 @@ features の外（アプリの入口・ルーティング）からは、features
 | `use-feature-directory`   | フィーチャーの中のディレクトリが `features/<name>/` と `components/` だけか         |
 | `no-cross-feature-import` | 同じフィーチャーと直下のサブフィーチャー、features の外からはページだけを import か |
 | `no-logic-in-components`  | `components/` の部品がフックを呼ばないか                                            |
+
+`no-cross-feature-import` は、相対パスと `@/` のパスエイリアスのどちらで書いた import も検査します。
 
 どのパスに当てるかは、リポジトリの oxlint の `overrides` に従ってください。

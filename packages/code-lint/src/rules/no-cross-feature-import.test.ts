@@ -5,7 +5,9 @@ import { noCrossFeatureImport } from "./no-cross-feature-import.ts";
 // ファイルシステムは見ないため、存在しないディレクトリを featuresDir にする
 const src = join("/project", "src");
 const featuresDir = join(src, "features");
-const options = [{ featuresDir, groups: ["shared"] }];
+const options = [
+  { aliases: { "@/": `${src}/` }, featuresDir, groups: ["shared"] },
+];
 
 const from = (path: string, code: string) => ({
   code,
@@ -79,6 +81,22 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
       errors: 1,
       name: "features の外からのサブフィーチャーの import は報告する",
     },
+    {
+      ...from(
+        "features/todo-page/index.tsx",
+        'import { TodoList } from "@/features/todo-list";',
+      ),
+      errors: 1,
+      name: "パスエイリアスで書いたほかのフィーチャーの import も報告する",
+    },
+    {
+      ...from(
+        "app/index.tsx",
+        'import { TodoList } from "@/features/todo-page/features/todo-list/index.tsx";',
+      ),
+      errors: 1,
+      name: "ルーティングのファイルからのサブフィーチャーの import は報告する",
+    },
   ],
   valid: [
     {
@@ -125,10 +143,24 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
     },
     {
       ...from(
-        "features/todo-page/index.tsx",
-        'import { TodoList } from "@/features/todo-list";',
+        "app/index.tsx",
+        'import { TodoPage } from "@/features/todo-page/index.tsx";',
       ),
-      name: "相対パスでない import は対象にしない",
+      name: "パスエイリアスで書いた features 直下のフィーチャーの import は許可する",
+    },
+    {
+      ...from(
+        "features/todo-page/index.tsx",
+        'import { ScrapChat } from "@/features/shared/scrap-chat";',
+      ),
+      name: "パスエイリアスで書いたグループの中のフィーチャーの import は許可する",
+    },
+    {
+      ...from(
+        "features/todo-page/index.tsx",
+        'import { useQuery } from "@tanstack/react-query";',
+      ),
+      name: "相対パスでもパスエイリアスでもない import は対象にしない",
     },
   ],
 });

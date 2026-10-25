@@ -1,4 +1,3 @@
-import { dirname, resolve } from "node:path";
 import { defineRule } from "@oxlint/plugins";
 import type { Node } from "../utils/ast.ts";
 import {
@@ -7,19 +6,15 @@ import {
   isDirectSubFeature,
   isSameFeature,
   parseFeaturePath,
+  resolveAliases,
   resolveFeaturesDir,
+  resolveImportSource,
 } from "../utils/feature-path.ts";
 
 const MESSAGE_FROM_FEATURE =
   "フィーチャーから import できるのは、同じフィーチャーのファイルと直下のサブフィーチャー（features/<name>/）だけです。ほかのフィーチャーの中で使うものは、使う側の features/ か components/ に移してください";
 const MESSAGE_FROM_OUTSIDE =
   "features の外から import できるのは、features 直下のフィーチャー（ページ）だけです。サブフィーチャーは親のフィーチャーから使ってください";
-
-const isRelative = (source: string) =>
-  source === "." ||
-  source === ".." ||
-  source.startsWith("./") ||
-  source.startsWith("../");
 
 /** フィーチャー own から target を import してよいか（own がどのフィーチャーにも属さなければ見ない） */
 const isAllowedFrom = (own: string[] | undefined, target: string[]) =>
@@ -31,19 +26,20 @@ const isAllowedFrom = (own: string[] | undefined, target: string[]) =>
 // import の制約。フィーチャーからは、同じフィーチャーのファイルと直下のサブフィーチャーだけを import でき、
 // features の外（ルーティングなど）からは features 直下のフィーチャーだけを import できる。
 // groups に挙げたディレクトリ（`shared` など）の中のフィーチャーは、どこからでも import できる。
-// 相対パスの import だけを見る（パスエイリアスは解決しない）
+// 相対パスと、aliases に挙げたパスエイリアス（既定は `@/` → `src/`）の import を見る
 export const noCrossFeatureImport = defineRule({
   create: (context) => {
     const [options] = context.options as [FeatureOptions?];
     const featuresDir = resolveFeaturesDir(context.cwd, options);
+    const aliases = resolveAliases(context.cwd, options);
     const importer = parseFeaturePath(featuresDir, context.filename, options);
     const message = (source: string): string | undefined => {
-      if (!isRelative(source)) return undefined;
-      const target = parseFeaturePath(
-        featuresDir,
-        resolve(dirname(context.filename), source),
-        { ...options, isModule: true },
-      );
+      const resolved = resolveImportSource(context.filename, source, aliases);
+      if (resolved === undefined) return undefined;
+      const target = parseFeaturePath(featuresDir, resolved, {
+        ...options,
+        isModule: true,
+      });
       if (target?.feature === undefined || target.inGroup) return undefined;
       if (importer === undefined) {
         return target.feature.length === 1 ? undefined : MESSAGE_FROM_OUTSIDE;

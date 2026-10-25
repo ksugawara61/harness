@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 /** フィーチャーの構成を見るルールに共通のオプション */
 export type FeatureOptions = {
@@ -6,15 +6,23 @@ export type FeatureOptions = {
   featuresDir?: string;
   /** features 直下で、フィーチャーをまとめるだけのディレクトリ（`shared` など） */
   groups?: string[];
+  /**
+   * import のパスエイリアス。接頭辞から解決先のディレクトリへの対応（`{ "@/": "src/" }` など）。
+   * 相対パスは oxlint を動かすディレクトリから解決する
+   */
+  aliases?: Record<string, string>;
 };
 
 /** FeatureOptions の JSON Schema のプロパティ。各ルールの meta.schema で広げる */
 export const featureOptionsProperties = {
+  aliases: { additionalProperties: { type: "string" }, type: "object" },
   featuresDir: { type: "string" },
   groups: { items: { type: "string" }, type: "array" },
 } as const;
 
 const DEFAULT_FEATURES_DIR = "src/features";
+
+const DEFAULT_ALIASES: Record<string, string> = { "@/": "src/" };
 
 /** 各フィーチャーのサブフィーチャーを置くディレクトリの名前 */
 const SUB_FEATURES_DIR = "features";
@@ -35,6 +43,49 @@ export type FeaturePath = {
 export const resolveFeaturesDir = (cwd: string, options?: FeatureOptions) =>
   resolve(cwd, options?.featuresDir ?? DEFAULT_FEATURES_DIR);
 
+export type Alias = {
+  /** import のパスの接頭辞（`@/` など） */
+  prefix: string;
+  /** 接頭辞が指すディレクトリの絶対パス */
+  dir: string;
+};
+
+export const resolveAliases = (
+  cwd: string,
+  options?: FeatureOptions,
+): Alias[] =>
+  Object.entries(options?.aliases ?? DEFAULT_ALIASES).map(([prefix, dir]) => ({
+    dir: resolve(cwd, dir),
+    prefix,
+  }));
+
+export const isRelativeSource = (source: string) =>
+  source === "." ||
+  source === ".." ||
+  source.startsWith("./") ||
+  source.startsWith("../");
+
+/**
+ * import のパスを絶対パスに解決する。相対パスは import するファイルから、
+ * エイリアスは接頭辞の指すディレクトリから解決する。どちらでもなければ（パッケージなど）undefined
+ */
+export const resolveImportSource = (
+  filename: string,
+  source: string,
+  aliases: Alias[],
+): string | undefined => {
+  if (isRelativeSource(source)) return resolve(dirname(filename), source);
+  const alias = aliases.find(({ prefix }) => source.startsWith(prefix));
+  return alias && resolve(alias.dir, source.slice(alias.prefix.length));
+};
+
+/** dir の中のパスなら、dir からのセグメントを返す。dir の外なら undefined */
+export const segmentsIn = (dir: string, path: string) => {
+  const rel = relative(dir, path);
+  if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) return undefined;
+  return rel.split(sep);
+};
+
 /**
  * featuresDir の中のパスを、属するフィーチャーと残りに分ける。featuresDir の外なら undefined。
  * ファイルのパスは、最後のセグメントをフィーチャーとみなさない。
@@ -46,9 +97,8 @@ export const parseFeaturePath = (
   path: string,
   options?: FeatureOptions & { isModule?: boolean },
 ): FeaturePath | undefined => {
-  const rel = relative(featuresDir, path);
-  if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) return undefined;
-  const segments = rel.split(sep);
+  const segments = segmentsIn(featuresDir, path);
+  if (segments === undefined) return undefined;
   // 名前のセグメントのあとに、ファイル名が 1 つ残るか（import 先はディレクトリでもよい）
   const minRest = options?.isModule ? 0 : 1;
   const hasName = (index: number) => index + minRest < segments.length;
