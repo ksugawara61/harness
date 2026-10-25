@@ -94,7 +94,7 @@ describe("sharedFeatureRules", () => {
         from: {},
         name: "shared-not-relative",
         to: {
-          dependencyTypes: ["aliased"],
+          dependencyTypes: ["aliased", "undetermined"],
           path: "^(?:src/features/shared/scrap-chat/shared)/",
         },
       },
@@ -115,7 +115,7 @@ describe("sharedFeatureRules", () => {
         from: {},
         name: "shared-not-relative",
         to: {
-          dependencyTypes: ["aliased"],
+          dependencyTypes: ["aliased", "undetermined"],
           path: "^(?:src/features/todo-page/shared)/",
         },
       },
@@ -128,7 +128,7 @@ describe("sharedFeatureRules", () => {
         from: {},
         name: "shared-not-relative",
         to: {
-          dependencyTypes: ["aliased"],
+          dependencyTypes: ["aliased", "undetermined"],
           path: "^(?:src/features/todo-page/features/todo-list/shared)/",
         },
       },

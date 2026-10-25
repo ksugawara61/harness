@@ -64,7 +64,8 @@ const under = (dirs: string[]) =>
  * dependency-cruiser の forbidden のルールを返す。
  * - shared-not-nearest：共有フィーチャーは、import するモジュールのフィーチャー自身と親のフィーチャーのうち、
  *   shared/ を持つ一番近いものの shared/ からだけ import する
- * - shared-not-relative：共有フィーチャーをパスエイリアスで import しない
+ * - shared-not-relative：共有フィーチャーをパスエイリアスで import しない。
+ *   tsconfig を読めればエイリアスの依存の種類は aliased に、読めなければ（TypeScript 7 など）undetermined になる
  * 一番近い shared/ を決めるため、呼んだ時点のファイルシステムで各フィーチャーの shared/ の有無を見る
  */
 export const sharedFeatureRules = (
@@ -101,7 +102,7 @@ export const sharedFeatureRules = (
         from: {},
         name: "shared-not-relative",
         severity,
-        to: { dependencyTypes: ["aliased"], path: shared },
+        to: { dependencyTypes: ["aliased", "undetermined"], path: shared },
       },
     ];
   });

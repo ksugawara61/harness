@@ -110,6 +110,8 @@ depcruise src
 一番近い `shared/` を決めるため、`sharedFeatureRules()` を呼んだ時点のファイルシステムで、各フィーチャーの `shared/` の有無を見る。
 dependency-cruiser は実行のたびに設定ファイルを読むため、`shared/` を足したり消したりしても設定を書き換えなくてよい。
 `shared-not-relative` は、パスエイリアスを解決できるように `options.tsConfig` を設定したときだけ報告できる。
+dependency-cruiser は TypeScript 7 の API にまだ対応していない。
+TypeScript 7 のプロジェクトでは、`@swc/core` を入れて `options.parser` を `"swc"` にし、tsc を求める `tsPreCompilationDeps` を外す。
 
 `sharedFeatureRules()` は次のオプションを取る。
 
