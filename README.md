@@ -57,19 +57,19 @@ git clone https://github.com/ksugawara61/harness.git ~/.harness
 
 ### ルール
 
-| ルール                 | 内容                                                                       |
-| ---------------------- | -------------------------------------------------------------------------- |
-| `javascript.md`        | JavaScript のコーディング規約                                              |
-| `typescript.md`        | TypeScript のコーディング規約                                              |
-| `test.md`              | Vitest で書くテストの書き方                                                |
-| `test-strategy.md`     | 何をテストするか                                                           |
-| `spec-test.md`         | `spec.ts` と `specIt` で書く仕様テストの書き方                             |
-| `storybook.md`         | `stories.tsx` で書く Storybook の story の書き方                           |
-| `feature-directory.md` | フィーチャーのディレクトリ構成                                             |
-| `routing.md`           | ルーティングのディレクトリとフィーチャーの役割分担（ライブラリを問わない） |
-| `import-path.md`       | 境界の内側は相対パス、越えるときは `@/` で書く import パス                 |
-| `graphql.md`           | GraphQL の操作を使うフィーチャーの `graphqls/` に置く書き方と fragment     |
-| `working-directory.md` | 作業ディレクトリの扱い                                                     |
+| ルール                 | 内容                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `javascript.md`        | JavaScript のコーディング規約                                                             |
+| `typescript.md`        | TypeScript のコーディング規約                                                             |
+| `test.md`              | Vitest で書くテストの書き方                                                               |
+| `test-strategy.md`     | 何をテストするか                                                                          |
+| `spec-test.md`         | `spec.ts` と `specIt` で書く仕様テストの書き方                                            |
+| `storybook.md`         | `stories.tsx` で書く Storybook の story の書き方                                          |
+| `feature-directory.md` | フィーチャーのディレクトリ構成                                                            |
+| `routing.md`           | ルーティングのディレクトリとフィーチャーの役割分担（ライブラリを問わない）                |
+| `import-path.md`       | 境界の内側は相対パス、越えるときは `@/` で書く import パス                                |
+| `graphql.md`           | GraphQL の操作を使うフィーチャーの `graphqls/` に置く書き方・fragment・送るフック・モック |
+| `working-directory.md` | 作業ディレクトリの扱い                                                                    |
 
 ### プラグイン
 
