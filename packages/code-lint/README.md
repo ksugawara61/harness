@@ -183,6 +183,8 @@ src/features/
     ├── service.ts
     ├── components/
     │   └── todo-header.tsx # ロジックの無い部品。1 ファイルずつ直接置く
+    ├── graphqls/
+    │   └── todos-query.ts  # フィーチャーが使う GraphQL の操作。1 操作ずつ直接置く
     ├── shared/
     │   └── todo-error/     # 配下で共通の部品（共有フィーチャー）。サブフィーチャーと同じ構成で、一番近い親の shared/ から相対パスで import する
     └── features/
@@ -195,13 +197,14 @@ src/features/
 
 | ルール                       | 内容                                                                                                                                                 |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/`・`shared/<name>/`・`components/` だけにする             |
+| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中は `features/<name>/`・`shared/<name>/`・`components/`・`graphqls/` だけにする              |
 | `no-cross-feature-import`    | フィーチャーからは同じフィーチャー・直下のサブフィーチャー・親の共有フィーチャーだけを、features の外からは features 直下のフィーチャーだけを import |
 | `use-nearest-shared-import`  | 共有フィーチャー（`shared/<name>/`）は、一番近い親のフィーチャーの `shared/` からだけ相対パスで import する                                          |
 | `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                                              |
 | `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く                                 |
 | `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                                            |
-| `use-own-fragment`           | `readFragment` には、同じディレクトリの `fragment.ts` から import した GraphQL の fragment だけを渡す                                                |
+| `use-graphql-operation-file` | `graphqls/` のファイルは GraphQL の操作を 1 つだけ export し、名前はファイル名の PascalCase、種類はファイル名の接尾辞に合わせる                      |
+| `use-own-fragment`           | `readFragment` には、同じフィーチャーの `graphqls/` から import した GraphQL の fragment だけを渡す                                                  |
 
 `no-cross-feature-import` は、ページ同士やサブフィーチャー同士の横の import を報告する。
 ほかのフィーチャーから使われるフィーチャーはページではない。使う側の `features/` へ移す。
@@ -228,12 +231,21 @@ import のパスは、相対パスと `aliases` に挙げたパスエイリア�
 expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["useParams", "useSearch"]` のように指定する。
 `Route.useParams()` のようなメンバー呼び出しは、プロパティの名前で判定する。
 
+GraphQL の操作（fragment・query・mutation）は、使うフィーチャーの `graphqls/` に 1 操作 1 ファイルで置く。
+`components/` と同じく、`graphqls/` の中にはディレクトリを切らない（`use-feature-directory`）。
+
+`use-graphql-operation-file` は、`graphqls/` のファイルを 1 ファイル 1 操作に揃える。
+ファイル名は操作の種類（`-fragment`・`-query`・`-mutation`・`-subscription`）で終える。
+export は `graphql()` で書いた操作 1 つだけにし、名前はファイル名の PascalCase にする。
+`todos-query.ts` なら ``export const TodosQuery = graphql(`query Todos { ... }`)`` になる。
+型の export は数えない。
+`src/features/**/graphqls/*.ts` のように、`graphqls/` のファイルに当てる。
+
 `use-own-fragment` は、GraphQL の fragment colocation の規約を保つ。
-サブフィーチャーは描画に使うフィールドを自分の `fragment.ts` に fragment で宣言し、親のクエリがそれをスプレッドで取り込む。
+サブフィーチャーは描画に使うフィールドを自分の `graphqls/` に fragment で宣言し、親のクエリがそれをスプレッドで取り込む。
 親は結果を masked のまま子に渡し、子だけが `readFragment` で読む。
-`readFragment` の第 1 引数が、同じディレクトリの `fragment.ts` から相対パスで import した識別子でなければ報告する。
-`fragment.ts` の中で宣言した fragment は許す。
-`fragmentFile` オプションでファイルの名前（拡張子を除く。既定は `"fragment"`）を、`functions` オプションで見る関数（既定は `["readFragment"]`）を変えられる。
+`readFragment` の第 1 引数が、同じフィーチャーの `graphqls/` の直下のファイルから相対パスで import した識別子でなければ報告する。
+`graphqlsDir` オプションでディレクトリの名前（既定は `"graphqls"`）を、`functions` オプションで見る関数（既定は `["readFragment"]`）を変えられる。
 `src/features/**` のように、フィーチャーのファイルに当てる。
 
 フィーチャーの構成を見る次のルールは、共通のオプションを取る。
@@ -248,7 +260,7 @@ expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["usePar
 | `featuresDir` | `"src/features"`   | フィーチャーを置くディレクトリ。oxlint を動かすディレクトリからの相対パス                                            |
 | `groups`      | `[]`               | features 直下でフィーチャーをまとめるディレクトリ（`["shared"]` など）。中のフィーチャーはどこからでも import できる |
 | `aliases`     | `{ "@/": "src/" }` | `use-feature-directory` 以外。パスエイリアスの接頭辞と解決先のディレクトリ                                           |
-| `allowDirs`   | `[]`               | `use-feature-directory` だけ。フィーチャーの中に置いてよいほかのディレクトリ（`["graphqls"]` など）                  |
+| `allowDirs`   | `[]`               | `use-feature-directory` だけ。フィーチャーの中に置いてよいほかのディレクトリ（`["assets"]` など）                    |
 
 ```jsonc
 // .oxlintrc.json

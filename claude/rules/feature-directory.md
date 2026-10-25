@@ -12,7 +12,7 @@ paths:
 - フィーチャーの中のファイル（`service.ts`・`spec.ts`・`stories.tsx` など）の書き方 → `spec-test.md`・`storybook.md`
 - ルーティングのディレクトリ（`src/app/`・`src/routes/` など）との役割分担 → `routing.md`
 - import のパス（相対パスと `@/`）の書き方 → `import-path.md`
-- サブフィーチャーが使う GraphQL のフィールド（fragment）の置き方 → `graphql-fragment.md`
+- GraphQL の操作（fragment・query・mutation）を置く `graphqls/` の書き方 → `graphql.md`
 - リポジトリ側に独自のディレクトリ構成の規約がある場合は、そちらを優先してください
 
 ## features 直下にはページ相当のフィーチャーだけを置く
@@ -44,7 +44,7 @@ src/features/
 フックや API の呼び出し（`useService`・`useQuery` など）を持つ部品は、親のフィーチャーの `features/<name>/` にサブフィーチャーとして置いてください。
 サブフィーチャーの中の構成は、ページのフィーチャーと同じです（`index.tsx`・`service.ts`・`spec.ts`・`test.tsx`・`stories.tsx`・`mocks.ts` など）。
 サブフィーチャーの部品も、同じ規則でさらに `features/` と `components/` に置けます。
-GraphQL の fragment（`fragment.ts`）を持つ部品もサブフィーチャーにします。`readFragment` を `useService` で呼ぶためです（`graphql-fragment.md`）。
+GraphQL の fragment を持つ部品もサブフィーチャーにします。`readFragment` を `useService` で呼ぶためです（`graphql.md`）。
 
 ```text
 // Good: 1 件分の完了・削除を持つ todo-item は todo-list のサブフィーチャー
@@ -59,6 +59,26 @@ src/features/todo-page/features/todo-list/
 
 // Bad: features/ を挟まずにディレクトリを切っている
 src/features/todo-page/todo-list/index.tsx
+```
+
+## GraphQL の操作は `graphqls/<operation-name>.ts` に置く
+
+フィーチャーが使う GraphQL の操作（fragment・query・mutation）は、そのフィーチャーの `graphqls/` に 1 操作 1 ファイルで置いてください。
+`graphqls/` の中にはディレクトリを切らず、`todo-item-fragment.ts`・`todos-query.ts` のようにファイルを直接置きます。
+ファイル名と export の名前、どのフィーチャーに置くかは `graphql.md` に従います。
+
+```text
+// Good: 操作を使うフィーチャーの graphqls/ に直接置く
+src/features/todo-page/features/todo-list/
+├── index.tsx
+├── service.ts
+└── graphqls/
+    └── todos-query.ts
+
+// Bad: graphqls/ の中にディレクトリを切っている
+src/features/todo-page/features/todo-list/graphqls/
+└── todos-query/
+    └── index.ts
 ```
 
 ## ロジックの無い部品は `components/<name>.tsx` に置く
@@ -166,7 +186,7 @@ features の外（ルーティングのファイルなど）からは、features
 
 | ルール                      | 検査すること                                                                                                 |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `use-feature-directory`     | フィーチャーの中のディレクトリが `features/<name>/`・`shared/<name>/`・`components/` だけか                  |
+| `use-feature-directory`     | フィーチャーの中のディレクトリが `features/<name>/`・`shared/<name>/`・`components/`・`graphqls/` だけか     |
 | `no-cross-feature-import`   | 同じフィーチャー・直下のサブフィーチャー・親の共有フィーチャーだけを、features の外からはページだけを import |
 | `use-nearest-shared-import` | 共有フィーチャーを import するのが一番近い親の `shared/` からだけで、相対パスで書いているか                  |
 | `no-logic-in-components`    | `components/` の部品がフックを呼ばないか                                                                     |

@@ -68,7 +68,7 @@ git clone https://github.com/ksugawara61/harness.git ~/.harness
 | `feature-directory.md` | フィーチャーのディレクトリ構成                                             |
 | `routing.md`           | ルーティングのディレクトリとフィーチャーの役割分担（ライブラリを問わない） |
 | `import-path.md`       | 境界の内側は相対パス、越えるときは `@/` で書く import パス                 |
-| `graphql-fragment.md`  | サブフィーチャーが使う GraphQL のフィールドを fragment で宣言する書き方    |
+| `graphql.md`           | GraphQL の操作を使うフィーチャーの `graphqls/` に置く書き方と fragment     |
 | `working-directory.md` | 作業ディレクトリの扱い                                                     |
 
 ### プラグイン
