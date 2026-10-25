@@ -1,5 +1,5 @@
 ---
-description: GraphQL の操作（fragment・query・mutation）を使うフィーチャーの graphqls/ に置くコロケーションと、サブフィーチャーの fragment の扱い
+description: GraphQL の操作（fragment・query・mutation）を使うフィーチャーの graphqls/ に置くコロケーションと、サブフィーチャーの fragment の扱い、操作を送るフックと API のモックの作り方
 paths:
   - "**/src/features/**"
 ---
@@ -8,12 +8,13 @@ paths:
 
 GraphQL の操作（fragment・query・mutation）を、使うフィーチャーの `graphqls/` に置く（コロケーション）ときの書き方を決めます。
 サブフィーチャーが使うフィールドは fragment で宣言し、親のクエリが取り込みます（fragment colocation）。
+操作は、データ取得のライブラリを包んだフックに渡して送り、API のモックも操作から作ります。
 コードレビュー時は以下のルールに基づいて指摘してください。
 
 - フィーチャーとサブフィーチャーの構成 → `feature-directory.md`
 - import のパス（相対パスと `@/`）の書き方 → `import-path.md`
 - `mocks.ts` と story の書き方 → `storybook.md`・`spec-test.md`
-- 例は gql.tada（`graphql()`・`readFragment`・`FragmentOf`・`maskFragments`）で書く。ほかのライブラリでは、同じ役割の関数に読み替える
+- 例は gql.tada（`graphql()`・`readFragment`・`FragmentOf`・`maskFragments`）・TanStack Query・MSW で書く。ほかのライブラリ（SWR など）では、同じ役割の関数に読み替える
 - リポジトリ側に独自の GraphQL の規約がある場合は、そちらを優先してください
 
 ## 操作は使うフィーチャーの `graphqls/<operation-name>.ts` に置く
@@ -22,8 +23,8 @@ fragment・query・mutation は、それを使うフィーチャーの `graphqls
 `src/api/` のような、フィーチャーの外のディレクトリにまとめません。
 
 - fragment は、`readFragment` で読むフィーチャーに置く
-- query は、送る（`useQuery` などを呼ぶ）フィーチャーに置く
-- mutation は、送る（`useMutation` などを呼ぶ）フィーチャーに置く
+- query は、送る（`useGraphQLQuery` を呼ぶ）フィーチャーに置く
+- mutation は、送る（`useGraphQLMutation` を呼ぶ）フィーチャーに置く
 
 操作をフィーチャーの外にまとめると、どの操作をどのフィーチャーが使うかがディレクトリから読み取れません。
 フィーチャーを消しても、使われない操作が残ります。
@@ -56,7 +57,7 @@ src/features/todo-page/features/
 - export は、`graphql()` で書いた操作 1 つだけにする。名前はファイル名の PascalCase（`todo-item-fragment.ts` → `TodoItemFragment`）
 - GraphQL の操作の名前は、export の名前から種類を外したものにする（`fragment TodoItem on Todo`・`query Todos`・`mutation CreateTodo`）
 - `graphqls/` の中にはディレクトリを切らず、ファイルを直接置く
-- `queryOptions` や送る関数は `graphqls/` に置かず、`service.ts` に書く
+- 操作を送るフック（`useGraphQLQuery`・`useGraphQLMutation`）は、`graphqls/` ではなく `service.ts` の `useService` で呼ぶ
 
 ```ts
 // Good: todo-item/graphqls/todo-item-fragment.ts
@@ -80,7 +81,7 @@ export const TodoFragment = graphql(/* ... */);
 
 同じ mutation を複数のフィーチャーで送るときも、操作はそれぞれのフィーチャーの `graphqls/` に置きます。
 ほかのフィーチャーの `graphqls/` を import しないでください（`no-cross-feature-import` が報告します）。
-取り直しに使う query key のように、複数のフィーチャーで使う値だけをフィーチャーの外に置きます。
+取り直しのための query key も、フィーチャーの外で共有しません。取り直すクエリは、mutation に型の名前で指定します（「取り直すクエリは型（`__typename`）で選ぶ」）。
 
 ## サブフィーチャーが使うフィールドは、サブフィーチャーの fragment に書く
 
@@ -222,6 +223,138 @@ const todo = {
 };
 ```
 
+## 操作は、ライブラリを包んだフックに渡して送る
+
+フィーチャーは、データ取得のライブラリ（TanStack Query の `useQuery`・`useMutation`、SWR の `useSWR` など）と fetch の関数を直接使わないでください。
+アプリの `src/lib/graphql-client.ts` などにライブラリを包んだフックを置き、フィーチャーはそのフックに `graphqls/` の操作を渡して送ります。
+
+| フック               | 第 2 引数                  | 包むもの（TanStack Query） |
+| -------------------- | -------------------------- | -------------------------- |
+| `useGraphQLQuery`    | `{ typenames, variables }` | `useQuery`                 |
+| `useGraphQLMutation` | `{ refetchTypes }`         | `useMutation`              |
+
+フィーチャーがライブラリを直接使うと、各フィーチャーで query key・fetch の関数・取り直しを書くことになります。
+同じ操作に別の key を付けたり、取り直す key を書き漏らしたりしても、型では気付けません。
+フックに包めば、key は操作の名前と変数からフックが作り、フィーチャーには操作と変数だけが残ります。
+ライブラリを入れ替えるときも、直すのはフックだけです。
+
+```ts
+// Good: todo-list/service.ts。操作を渡すだけで、key も fetch の関数も書かない
+const { data, isError, isPending } = useGraphQLQuery(TodosQuery, {
+  typenames: ["Todo"],
+});
+
+// Good: todo-add/service.ts。成功したときだけの処理は mutate の onSuccess に書く
+const { isPending, mutate } = useGraphQLMutation(CreateTodoMutation, {
+  refetchTypes: ["Todo"],
+});
+mutate({ input: { title } }, { onSuccess: () => setTitle("") });
+
+// Bad: フィーチャーで key と fetch の関数を組み立てている
+const { data } = useQuery({
+  queryFn: () => gqlFetch(TodosQuery, {}),
+  queryKey: ["todos"],
+});
+```
+
+フックは、次のように作ります。
+
+- query key は `["graphql", 操作の名前, 変数]` にする。操作の名前は、ドキュメントから `getOperationAST` で読む
+- `useGraphQLQuery` の `typenames` は、query の `meta` に持たせる
+- `useGraphQLMutation` は、成功したら `refetchTypes` の型を返すクエリを取り直す（`invalidateQueries` の `predicate`）。取り直しの Promise を `onSuccess` から返し、終わるまで `isPending` のままにする
+
+```ts
+// src/lib/graphql-client.ts（抜粋）
+export const useGraphQLQuery = <Result, Variables>(
+  document: TadaDocumentNode<Result, Variables>,
+  options?: { typenames?: readonly string[]; variables?: Variables },
+) =>
+  useQuery({
+    meta: { typenames: options?.typenames },
+    queryFn: () => gqlFetch(document, options?.variables),
+    queryKey: ["graphql", getOperationName(document), options?.variables],
+  });
+```
+
+フィーチャーからライブラリと fetch の関数を import できないよう、oxlint の `no-restricted-imports` を `src/features/**` に当ててください。
+
+```json
+{
+  "group": ["@tanstack/react-query", "@/lib/gql.ts"],
+  "message": "フィーチャーからは @/lib/graphql-client.ts の useGraphQLQuery・useGraphQLMutation で操作を送ってください"
+}
+```
+
+## 取り直すクエリは型（`__typename`）で選ぶ
+
+mutation のあとに取り直すクエリは、`useGraphQLMutation` の `refetchTypes` に、変わる型の名前で指定してください。
+取り直すクエリの key や、ほかのフィーチャーのクエリを import して指定しません。
+
+```ts
+// Good: todo-item/service.ts。Todo を返すクエリをすべて取り直す
+const toggle = useGraphQLMutation(UpdateTodoMutation, {
+  refetchTypes: ["Todo"],
+});
+
+// Bad: 一覧の key をフィーチャーの外に置き、mutation を送る側から指定している
+// src/api/todo.ts
+export const todosQueryKey = ["todos"];
+// todo-item/service.ts
+onSuccess: () => queryClient.invalidateQueries({ queryKey: todosQueryKey });
+```
+
+key で指定すると、mutation を送るフィーチャーが、取り直すクエリを知っていなければなりません。
+クエリを足すたびに mutation の側も直すことになり、key を共有するためにフィーチャーの外へ値を置くことにもなります。
+型で指定すれば、mutation の側は自分が変える型だけを書き、どのクエリが取り直されるかはクエリの側で決まります。
+
+クエリが返す型は、キャッシュした結果に含まれる `__typename` と、`useGraphQLQuery` に渡した `typenames` を合わせたものです。
+一覧のクエリは空のとき結果から型を拾えないため、`typenames` に型を書いてください。
+結果に `__typename` を選ばないクエリも、同じく `typenames` に書きます。
+
+```ts
+// Good: 空の一覧からも、追加したあとに取り直せる
+useGraphQLQuery(TodosQuery, { typenames: ["Todo"] });
+
+// Bad: 空の一覧は型を拾えず、最初の 1 件を追加しても取り直されない
+useGraphQLQuery(TodosQuery);
+```
+
+## API のモックは操作から作る
+
+決まった応答を返す API のモックは、`src/mocks/graphql.ts` などに置いたヘルパーで、同じフィーチャーの `graphqls/` の操作から作ってください。
+`mocks.ts` で、操作の名前の文字列や、`errors` の JSON をケースごとに書きません。
+
+| ヘルパー              | 作るもの                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| `createMockQuery`     | クエリに応答する MSW のハンドラー。resolver が返す `data` は、クエリの結果の型で検査される |
+| `createMockMutation`  | mutation に応答する MSW のハンドラー                                                       |
+| `mockErrorResolver`   | `errors` を返して、操作を失敗させる resolver。`data` を持たないため、どの操作にも渡せる    |
+| `mockLoadingResolver` | 応答を返さず、読み込み中のままにする resolver（MSW の `delay("infinite")`）                |
+
+```ts
+// Good: todo-list/mocks.ts
+export const TodoListMocks = {
+  Error: [
+    createMockQuery(TodosQuery, mockErrorResolver("読み込みに失敗しました")),
+  ],
+  Loading: [createMockQuery(TodosQuery, mockLoadingResolver)],
+  Success: createTodoHandlers([buildTodo({ title: "牛乳を買う" })]),
+} satisfies Record<string, RequestHandler[]>;
+
+// Bad: 操作の名前を文字列で書き、errors の JSON をケースごとに組み立てている
+export const TodoListMocks = {
+  Error: [
+    graphql.query("Todos", () =>
+      HttpResponse.json({ errors: [{ message: "読み込みに失敗しました" }] }),
+    ),
+  ],
+} satisfies Record<string, RequestHandler[]>;
+```
+
+操作を渡せば、操作の名前を書き違えることがなく、`data` の形もクエリの結果の型で検査されます。
+ハンドラーは、アプリの GraphQL のエンドポイント（`graphql.link`）に結び付けて作ります。
+読み込み中の表示も、`mockLoadingResolver` のケースを作り、story で残します（`storybook.md`）。
+
 ## lint で強制する
 
 `@ksugawara61/code-lint` の次のルールで、この規約を lint で強制できます。
@@ -232,7 +365,8 @@ const todo = {
 | `use-graphql-operation-file` | `graphqls/` のファイルが操作を 1 つだけ export し、名前と種類がファイル名に合っているか               |
 | `use-own-fragment`           | `readFragment` に、同じフィーチャーの `graphqls/` から import した fragment だけを渡しているか        |
 | `no-cross-feature-import`    | ほかのフィーチャーの `graphqls/` を import していないか（親から直下の子の fragment の import は許す） |
+| `no-restricted-imports`      | フィーチャーが、データ取得のライブラリと fetch の関数を直接 import していないか（oxlint の組み込み）  |
 
 `use-graphql-operation-file` は `src/features/**/graphqls/*.ts` に当てます。
-`use-own-fragment` は `src/features/**` に当てます。
+`use-own-fragment`・`no-restricted-imports` は `src/features/**` に当てます。
 どのパスに当てるかは、リポジトリの oxlint の `overrides` に従ってください。
