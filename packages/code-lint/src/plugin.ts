@@ -6,16 +6,18 @@ import { noCrossFeatureImport } from "./rules/no-cross-feature-import.ts";
 import { noDynamicNamespaceImportAccess } from "./rules/no-dynamic-namespace-import-access.ts";
 import { noEventInYields } from "./rules/no-event-in-yields.ts";
 import { noExpectInGivenWhen } from "./rules/no-expect-in-given-when.ts";
-import { noExpoRouterInUseServiceReturn } from "./rules/no-expo-router-in-use-service-return.ts";
 import { noFlatMapIdentity } from "./rules/no-flat-map-identity.ts";
 import { noHandlerInComponent } from "./rules/no-handler-in-component.ts";
 import { noImplicitAnyLet } from "./rules/no-implicit-any-let.ts";
 import { noInlineHandlerLogic } from "./rules/no-inline-handler-logic.ts";
 import { noLogicInComponents } from "./rules/no-logic-in-components.ts";
+import { noLogicInRoutes } from "./rules/no-logic-in-routes.ts";
 import { noMisplacedListElements } from "./rules/no-misplaced-list-elements.ts";
 import { noMultipleFeatureExports } from "./rules/no-multiple-feature-exports.ts";
 import { noRawSetterReturn } from "./rules/no-raw-setter-return.ts";
 import { noRawVitestTest } from "./rules/no-raw-vitest-test.ts";
+import { noRelativeCrossBoundary } from "./rules/no-relative-cross-boundary.ts";
+import { noRouterInUseServiceReturn } from "./rules/no-router-in-use-service-return.ts";
 import { noStorybookTitle } from "./rules/no-storybook-title.ts";
 import { noStringCaseMismatch } from "./rules/no-string-case-mismatch.ts";
 import { noStylePropInUi } from "./rules/no-style-prop-in-ui.ts";
@@ -56,16 +58,18 @@ export default definePlugin({
     "no-dynamic-namespace-import-access": noDynamicNamespaceImportAccess,
     "no-event-in-yields": noEventInYields,
     "no-expect-in-given-when": noExpectInGivenWhen,
-    "no-expo-router-in-use-service-return": noExpoRouterInUseServiceReturn,
     "no-flat-map-identity": noFlatMapIdentity,
     "no-handler-in-component": noHandlerInComponent,
     "no-implicit-any-let": noImplicitAnyLet,
     "no-inline-handler-logic": noInlineHandlerLogic,
     "no-logic-in-components": noLogicInComponents,
+    "no-logic-in-routes": noLogicInRoutes,
     "no-misplaced-list-elements": noMisplacedListElements,
     "no-multiple-feature-exports": noMultipleFeatureExports,
     "no-raw-setter-return": noRawSetterReturn,
     "no-raw-vitest-test": noRawVitestTest,
+    "no-relative-cross-boundary": noRelativeCrossBoundary,
+    "no-router-in-use-service-return": noRouterInUseServiceReturn,
     "no-storybook-title": noStorybookTitle,
     "no-string-case-mismatch": noStringCaseMismatch,
     "no-style-prop-in-ui": noStylePropInUi,
