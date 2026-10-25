@@ -46,7 +46,7 @@ paths:
 - `yields` には観測できる結果だけを書く。内部状態やモックの呼び出しを書きたくなったら、実装の詳細をテストしているサイン
 
 ```ts
-// src/features/todo-add/spec.ts
+// src/features/todo-page/features/todo-add/spec.ts
 import { defineSpec } from "@ksugawara61/spec";
 
 export const spec = defineSpec("todo-add", {
@@ -69,7 +69,7 @@ export const spec = defineSpec("todo-add", {
 各フェーズは `{ desc, run }` で書き、`desc` に `spec.ts` の仕様文をそのままコピーします。
 
 ```tsx
-// src/features/todo-add/test.tsx
+// src/features/todo-page/features/todo-add/test.tsx
 import { specIt } from "@ksugawara61/spec/vitest";
 import { spec } from "./spec";
 
