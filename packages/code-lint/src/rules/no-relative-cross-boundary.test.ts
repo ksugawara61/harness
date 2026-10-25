@@ -59,7 +59,7 @@ ruleTester.run("no-relative-cross-boundary", noRelativeCrossBoundary, {
     },
     {
       ...from(
-        "apps/index.tsx",
+        "app/index.tsx",
         'import { TodoPage } from "../features/todo-page/index.tsx";',
       ),
       errors: 1,

@@ -1,8 +1,7 @@
 ---
-description: ルーティングのディレクトリ（app・apps・routes など）とフィーチャーの役割分担。ルーティングのライブラリを問わない
+description: ルーティングのディレクトリ（app・routes など）とフィーチャーの役割分担。ルーティングのライブラリを問わない
 paths:
   - "**/src/app/**"
-  - "**/src/apps/**"
   - "**/src/routes/**"
   - "**/src/pages/**"
 ---
@@ -22,11 +21,11 @@ expo-router・TanStack Router・React Router・Next.js など、ルーティン�
 ルーティングのディレクトリには、ライブラリが決めるルートのファイルだけを置いてください。
 ディレクトリの名前と置き方はライブラリと設定に従います。
 
-| ライブラリ                    | ルーティングのディレクトリの例                                              |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| expo-router                   | `src/app/`（`_layout.tsx`・`(group)/` など）                                |
-| TanStack Router（file-based） | `routesDirectory` に指定したディレクトリ（`src/apps/`・`src/routes/` など） |
-| Next.js（App Router）         | `src/app/`（`page.tsx`・`layout.tsx` など）                                 |
+| ライブラリ                    | ルーティングのディレクトリの例                                             |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| expo-router                   | `src/app/`（`_layout.tsx`・`(group)/` など）                               |
+| TanStack Router（file-based） | `routesDirectory` に指定したディレクトリ（`src/app/`・`src/routes/` など） |
+| Next.js（App Router）         | `src/app/`（`page.tsx`・`layout.tsx` など）                                |
 
 ルートのファイルの役割は、次の 3 つだけです。
 
@@ -94,7 +93,7 @@ import は `@/features/<page>/...` のパスエイリアスで書きます。
 | `no-logic-in-routes`              | ルーティングのディレクトリ | `allowHooks` に挙げたフック（パラメーターの読み取りなど）以外を呼ばないか     |
 | `no-cross-feature-import`         | `src/**`                   | ルーティングのディレクトリなど、features の外からはページだけを import するか |
 | `no-router-in-use-service-return` | `service.ts`               | `hooks` に挙げたフックの値を `useService` の return に含めないか              |
-| `no-restricted-imports`（oxlint） | `src/features/**`          | ルーティングのディレクトリ（`@/apps/*` など）を import しないか               |
+| `no-restricted-imports`（oxlint） | `src/features/**`          | ルーティングのディレクトリ（`@/app/*` など）を import しないか                |
 
 `no-logic-in-routes` の `allowHooks` と `no-router-in-use-service-return` の `hooks` は、使うライブラリに合わせて設定します。
 

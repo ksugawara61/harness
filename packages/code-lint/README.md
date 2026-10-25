@@ -155,7 +155,7 @@ import のパスは、相対パスと `aliases` に挙げたパスエイリア�
 報告のメッセージには、書き換え先のエイリアスのパスが出る。
 
 - features 直下のフィーチャー（`groups` に挙げたディレクトリの中は、その中のフィーチャー）
-- 解決先の直下のほかのディレクトリ（`ui`・`api`・`apps` などのレイヤー）
+- 解決先の直下のほかのディレクトリ（`ui`・`api`・`app` などのレイヤー）
 - 解決先の直下のファイル（`main.tsx` など）。ファイルごとに 1 つの単位
 
 `no-logic-in-routes` は、ルーティングのファイルをライブラリを問わず薄く保つ。
@@ -188,8 +188,8 @@ expo-router なら `["useLocalSearchParams"]`、TanStack Router なら `["usePar
       "rules": { "code-lint/use-feature-directory": "error" },
     },
     {
-      // TanStack Router で src/apps をルーティングのディレクトリにする例
-      "files": ["src/apps/**"],
+      // TanStack Router で src/app をルーティングのディレクトリにする例
+      "files": ["src/app/**"],
       "rules": {
         "code-lint/no-logic-in-routes": [
           "error",

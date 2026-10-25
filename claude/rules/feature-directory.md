@@ -10,7 +10,7 @@ paths:
 コードレビュー時は以下のルールに基づいて指摘してください。
 
 - フィーチャーの中のファイル（`service.ts`・`spec.ts`・`stories.tsx` など）の書き方 → `spec-test.md`・`storybook.md`
-- ルーティングのディレクトリ（`src/app/`・`src/apps/` など）との役割分担 → `routing.md`
+- ルーティングのディレクトリ（`src/app/`・`src/routes/` など）との役割分担 → `routing.md`
 - import のパス（相対パスと `@/`）の書き方 → `import-path.md`
 - リポジトリ側に独自のディレクトリ構成の規約がある場合は、そちらを優先してください
 

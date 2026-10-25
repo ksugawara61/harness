@@ -91,7 +91,7 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
     },
     {
       ...from(
-        "apps/index.tsx",
+        "app/index.tsx",
         'import { TodoList } from "@/features/todo-page/features/todo-list/index.tsx";',
       ),
       errors: 1,
@@ -143,7 +143,7 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
     },
     {
       ...from(
-        "apps/index.tsx",
+        "app/index.tsx",
         'import { TodoPage } from "@/features/todo-page/index.tsx";',
       ),
       name: "パスエイリアスで書いた features 直下のフィーチャーの import は許可する",
