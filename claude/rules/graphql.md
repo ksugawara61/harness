@@ -212,11 +212,17 @@ const maskedTodo = { id: "todo-1" } as FragmentOf<typeof TodoItemFragment>;
 
 親のクエリのモックは、子の fragment を意識しないで書けるようにします。
 
-- API のモックがスキーマでクエリを実行する（MSW のハンドラーから `graphql()` の実行に渡すなど）なら、初期データを渡すだけでよい。fragment のフィールドはスキーマが選ぶ
-- 決まった JSON を返すモックなら、masked にする前の値も子の `mocks.ts` から `Unmasked<Feature>FragmentMocks` で export する。親のモックでは、それと masked の値をスプレッドで重ねる
+masked にする前の値も子の `mocks.ts` から `Unmasked<Feature>FragmentMocks` で export してください。
+親のモックでは、それと masked の値をスプレッドで重ねます（API のモックは「API のモックは操作から作る」）。
 
 ```ts
-// 決まった JSON を返すモックの例: todo-list/mocks.ts
+// todo-item/mocks.ts
+export const UnmaskedTodoItemFragmentMocks = {
+  /** 未完了の「牛乳を買う」 */
+  Active: buildTodo({ id: "todo-1", title: "牛乳を買う" }),
+} satisfies Record<string, ResultOf<typeof TodoItemFragment>>;
+
+// todo-list/mocks.ts
 const todo = {
   ...UnmaskedTodoItemFragmentMocks.Active,
   ...TodoItemFragmentMocks.Active,
@@ -244,11 +250,18 @@ const { data, isError, isPending } = useGraphQLQuery(TodosQuery, {
   typenames: ["Todo"],
 });
 
-// Good: todo-add/service.ts。成功したときだけの処理は mutate の onSuccess に書く
-const { isPending, mutate } = useGraphQLMutation(CreateTodoMutation, {
+// Good: todo-add/service.ts。成功したときだけの処理は mutateAsync を await したあとに書く
+const { isPending, mutateAsync } = useGraphQLMutation(CreateTodoMutation, {
   refetchTypes: ["Todo"],
 });
-mutate({ input: { title } }, { onSuccess: () => setTitle("") });
+const handleSubmit = async () => {
+  try {
+    await mutateAsync({ input: { title } });
+  } catch {
+    return; // 失敗は isError で表示する
+  }
+  setTitle("");
+};
 
 // Bad: フィーチャーで key と fetch の関数を組み立てている
 const { data } = useQuery({
@@ -261,10 +274,27 @@ const { data } = useQuery({
 
 - query key は `["graphql", 操作の名前, 変数]` にする。操作の名前は、ドキュメントから `getOperationAST` で読む
 - `useGraphQLQuery` の `typenames` は、query の `meta` に持たせる
-- `useGraphQLMutation` は、成功したら `refetchTypes` の型を返すクエリを取り直す（`invalidateQueries` の `predicate`）。取り直しの Promise を `onSuccess` から返し、終わるまで `isPending` のままにする
+- `useGraphQLMutation` は、成功したら `refetchTypes` の型を返すクエリを取り直す（`invalidateQueries` の `predicate`）。`mutationFn` の中で、送ったあとに取り直しを `await` し、終わるまで `isPending` のままにする
 
 ```ts
 // src/lib/graphql-client.ts（抜粋）
+export const useGraphQLMutation = <Result, Variables>(
+  document: TadaDocumentNode<Result, Variables>,
+  options?: { refetchTypes?: readonly string[] },
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (variables: Variables) => {
+      const result = await gqlFetch(document, variables);
+      await queryClient.invalidateQueries({
+        predicate: (query) =>
+          returnsAnyType(query, options?.refetchTypes ?? []),
+      });
+      return result;
+    },
+  });
+};
+
 export const useGraphQLQuery = <Result, Variables>(
   document: TadaDocumentNode<Result, Variables>,
   options?: { typenames?: readonly string[]; variables?: Variables },
@@ -285,6 +315,35 @@ export const useGraphQLQuery = <Result, Variables>(
 }
 ```
 
+## mutation の結果を待つ処理は `async`・`await` で書く
+
+mutation が成功したあとの処理（入力欄を空にする、画面を移るなど）は、`mutateAsync` を `await` したあとに書いてください。
+`mutate` の第 2 引数や `useMutation` の `onSuccess`・`onError`・`onSettled` に、コールバックで書きません。
+
+コールバックで書くと、送る処理と成功したあとの処理が別の関数に分かれ、上から順に読めません。
+`await` で書けば、送ってから成功したあとまでが 1 つの関数の中で順に並びます。
+フックの中の取り直しも、`onSuccess` ではなく `mutationFn` の中で `await` します。
+
+失敗は `isError` で表示するため、`catch` では何もせずに抜けます。
+`catch` を書かないと、失敗したときに `mutateAsync` の Promise が捕まえられずに残ります。
+
+```ts
+// Good: 送ってから成功したあとまでを、上から順に書く
+const handleSubmit = async () => {
+  try {
+    await mutateAsync({ input: { title } });
+  } catch {
+    return; // 失敗は isError で表示する
+  }
+  setTitle("");
+};
+
+// Bad: 成功したあとの処理をコールバックに書いている
+const handleSubmit = () => {
+  mutate({ input: { title } }, { onSuccess: () => setTitle("") });
+};
+```
+
 ## 取り直すクエリは型（`__typename`）で選ぶ
 
 mutation のあとに取り直すクエリは、`useGraphQLMutation` の `refetchTypes` に、変わる型の名前で指定してください。
@@ -300,7 +359,7 @@ const toggle = useGraphQLMutation(UpdateTodoMutation, {
 // src/api/todo.ts
 export const todosQueryKey = ["todos"];
 // todo-item/service.ts
-onSuccess: () => queryClient.invalidateQueries({ queryKey: todosQueryKey });
+await queryClient.invalidateQueries({ queryKey: todosQueryKey });
 ```
 
 key で指定すると、mutation を送るフィーチャーが、取り直すクエリを知っていなければなりません。
@@ -321,13 +380,15 @@ useGraphQLQuery(TodosQuery);
 
 ## API のモックは操作から作る
 
-決まった応答を返す API のモックは、`src/mocks/graphql.ts` などに置いたヘルパーで、同じフィーチャーの `graphqls/` の操作から作ってください。
+API のモックは、`src/mocks/graphql.ts` などに置いたヘルパーで、同じフィーチャーの `graphqls/` の操作から作ってください。
 `mocks.ts` で、操作の名前の文字列や、`errors` の JSON をケースごとに書きません。
+メモリ上のストアを持ち、すべての操作をスキーマで実行するハンドラー（`createTodoHandlers` など）も、テストと story の `mocks.ts` では使いません。
 
 | ヘルパー              | 作るもの                                                                                   |
 | --------------------- | ------------------------------------------------------------------------------------------ |
 | `createMockQuery`     | クエリに応答する MSW のハンドラー。resolver が返す `data` は、クエリの結果の型で検査される |
 | `createMockMutation`  | mutation に応答する MSW のハンドラー                                                       |
+| `mockDataResolver`    | `data` を返して、操作を成功させる resolver                                                 |
 | `mockErrorResolver`   | `errors` を返して、操作を失敗させる resolver。`data` を持たないため、どの操作にも渡せる    |
 | `mockLoadingResolver` | 応答を返さず、読み込み中のままにする resolver（MSW の `delay("infinite")`）                |
 
@@ -338,7 +399,9 @@ export const TodoListMocks = {
     createMockQuery(TodosQuery, mockErrorResolver("読み込みに失敗しました")),
   ],
   Loading: [createMockQuery(TodosQuery, mockLoadingResolver)],
-  Success: createTodoHandlers([buildTodo({ title: "牛乳を買う" })]),
+  Success: [
+    createMockQuery(TodosQuery, mockDataResolver({ todos: [activeTodo] })),
+  ],
 } satisfies Record<string, RequestHandler[]>;
 
 // Bad: 操作の名前を文字列で書き、errors の JSON をケースごとに組み立てている
@@ -349,9 +412,31 @@ export const TodoListMocks = {
     ),
   ],
 } satisfies Record<string, RequestHandler[]>;
+
+// Bad: ストアを持つハンドラーで、すべての操作をスキーマで実行している
+export const TodoListMocks = {
+  Success: createTodoHandlers([buildTodo({ title: "牛乳を買う" })]),
+} satisfies Record<string, RequestHandler[]>;
 ```
 
 操作を渡せば、操作の名前を書き違えることがなく、`data` の形もクエリの結果の型で検査されます。
+ストアを持つハンドラーは、どの操作にどう応答するかがケースから読み取れず、テストの間でストアを初期データに戻す処理も要ります。
+操作ごとに決まった応答を返せば、ケースを読むだけで応答が分かり、ハンドラーは状態を持ちません。
+
+mutation のあとに取り直すと結果が変わるケースは、最初の応答を MSW の `{ once: true }` で 1 回だけにし、取り直したあとの応答を後ろに並べます。
+`createMockQuery`・`createMockMutation` の第 3 引数に、MSW のハンドラーのオプションを渡せるようにしてください。
+
+```ts
+// Good: todo-list/mocks.ts。削除すると、取り直した一覧が空になる
+SingleThenDeleted: [
+  createMockQuery(TodosQuery, mockDataResolver({ todos: [activeTodo] }), {
+    once: true,
+  }),
+  ...TodoItemMocks.Success,
+  createMockQuery(TodosQuery, mockDataResolver({ todos: [] })),
+],
+```
+
 ハンドラーは、アプリの GraphQL のエンドポイント（`graphql.link`）に結び付けて作ります。
 読み込み中の表示も、`mockLoadingResolver` のケースを作り、story で残します（`storybook.md`）。
 
