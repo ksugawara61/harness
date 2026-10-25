@@ -25,15 +25,23 @@ const DEFAULT_FEATURES_DIR = "src/features";
 const DEFAULT_ALIASES: Record<string, string> = { "@/": "src/" };
 
 /** 各フィーチャーのサブフィーチャーを置くディレクトリの名前 */
-const SUB_FEATURES_DIR = "features";
+export const SUB_FEATURES_DIR = "features";
 
-/** 各フィーチャーの中で、配下のサブフィーチャーに共通のロジックを置くディレクトリの名前 */
+/**
+ * 各フィーチャーの中で、配下のフィーチャーに共通の部品を置くディレクトリの名前。
+ * 中には features/ と同じく、フィーチャーのディレクトリ（共有フィーチャー）を置く
+ */
 export const SHARED_DIR = "shared";
+
+/** フィーチャーの中で、子のフィーチャーを置くディレクトリ */
+const isFeatureContainer = (segment: string | undefined) =>
+  segment === SUB_FEATURES_DIR || segment === SHARED_DIR;
 
 export type FeaturePath = {
   /**
    * パスが属するフィーチャーのディレクトリ（featuresDir からのセグメント）。
-   * `todo-page/features/todo-list` は ["todo-page", "features", "todo-list"]。
+   * `todo-page/features/todo-list` は ["todo-page", "features", "todo-list"]、
+   * 共有フィーチャー `todo-page/shared/todo-error` は ["todo-page", "shared", "todo-error"]。
    * features 直下やグループの直下に置いたファイルのように、どのフィーチャーにも属さなければ undefined
    */
   feature: string[] | undefined;
@@ -113,8 +121,8 @@ export const parseFeaturePath = (
   }
   const feature = segments.slice(0, start + 1);
   let index = start + 1;
-  while (segments[index] === SUB_FEATURES_DIR && hasName(index + 1)) {
-    feature.push(SUB_FEATURES_DIR, segments[index + 1] ?? "");
+  while (isFeatureContainer(segments[index]) && hasName(index + 1)) {
+    feature.push(segments[index] ?? "", segments[index + 1] ?? "");
     index += 2;
   }
   return { feature, inGroup, rest: segments.slice(index) };
@@ -125,6 +133,15 @@ export const isDirectSubFeature = (parent: string[], child: string[]) =>
   child.length === parent.length + 2 &&
   parent.every((segment, index) => child[index] === segment) &&
   child[parent.length] === SUB_FEATURES_DIR;
+
+/**
+ * 共有フィーチャー（`<owner>/shared/<name>`）なら、shared/ を持つフィーチャー owner を返す。
+ * グループの中のフィーチャー（`shared/<name>`）のグループのディレクトリは shared/ とみなさない
+ */
+export const sharedOwnerOf = (feature: string[]) =>
+  feature.length > 2 && feature.at(-2) === SHARED_DIR
+    ? feature.slice(0, -2)
+    : undefined;
 
 export const isSameFeature = (a: string[], b: string[]) =>
   a.length === b.length && a.every((segment, index) => b[index] === segment);

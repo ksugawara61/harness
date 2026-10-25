@@ -1,12 +1,13 @@
 # code-lint
 
 oxlint・oxfmt の共通設定と、Biome のルール・コンポーネント設計の規約を検査する oxlint の JS プラグインをまとめたパッケージ。
-oxlint が読めない `.graphql` と JSON のキー順を検査する CLI も同梱する。
+oxlint が読めない `.graphql` と JSON のキー順を検査する CLI と、フィーチャーの依存を検査する dependency-cruiser のルールも同梱する。
 
 - `oxlintrc.json`：Biome の recommended 相当のルールを有効にした oxlint の設定。プラグインもここから読み込む
 - `oxfmtrc.json`：Biome の formatter と organizeImports 相当の oxfmt の設定
 - `code-lint/*`：oxlint に同等のルールが無いものを Biome の実装から移植したルールと、規約のルール（既定では無効）
 - `code-lint-graphql`・`code-lint-sort-json-keys`：`.graphql` と JSON を検査する CLI
+- `@ksugawara61/code-lint/dependency-cruiser`：共有フィーチャーの依存を検査する dependency-cruiser のルール
 
 ## インストール
 
@@ -70,6 +71,55 @@ code-lint-sort-json-keys --ignore '**/*.local.json' 'tsconfig.json' 'src/**/*.js
 どちらも `node_modules` の中のファイルは対象にせず、指摘があれば終了コード 1 になる。
 `package.json` の `exports` のように、キーの順に意味がある JSON は対象にしない。
 
+## dependency-cruiser
+
+`sharedFeatureRules()` は、共有フィーチャー（フィーチャーの中の `shared/<name>/`）の依存を検査する dependency-cruiser のルールを返す。
+`@ksugawara61/code-lint/dependency-cruiser` から import する。
+制約は oxlint の `use-nearest-shared-import` と同じ（下の「規約のルール」を参照）。
+dependency-cruiser は optional の peer dependency のため、使うときに利用側で入れる。
+
+```bash
+pnpm add -D dependency-cruiser
+```
+
+```js
+// .dependency-cruiser.mjs
+import { sharedFeatureRules } from "@ksugawara61/code-lint/dependency-cruiser";
+
+export default {
+  forbidden: [...sharedFeatureRules()],
+  options: {
+    doNotFollow: { path: "node_modules" },
+    tsConfig: { fileName: "tsconfig.json" },
+    tsPreCompilationDeps: true,
+  },
+};
+```
+
+```bash
+depcruise src
+```
+
+返すルールは 2 種類。
+
+| ルール名              | 報告すること                                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `shared-not-nearest`  | 共有フィーチャーを、import するモジュールのフィーチャー自身と親のうち、`shared/` を持つ一番近いもの以外から import する |
+| `shared-not-relative` | 共有フィーチャーをパスエイリアス（tsconfig の `paths` など）で import する                                              |
+
+一番近い `shared/` を決めるため、`sharedFeatureRules()` を呼んだ時点のファイルシステムで、各フィーチャーの `shared/` の有無を見る。
+dependency-cruiser は実行のたびに設定ファイルを読むため、`shared/` を足したり消したりしても設定を書き換えなくてよい。
+`shared-not-relative` は、パスエイリアスを解決できるように `options.tsConfig` を設定したときだけ報告できる。
+
+`sharedFeatureRules()` は次のオプションを取る。
+
+| オプション    | 既定値           | 内容                                                                                    |
+| ------------- | ---------------- | --------------------------------------------------------------------------------------- |
+| `featuresDir` | `"src/features"` | フィーチャーを置くディレクトリ。`cwd` からの相対パス                                    |
+| `groups`      | `[]`             | features 直下でフィーチャーをまとめるディレクトリ（`["shared"]` など）                  |
+| `cwd`         | `process.cwd()`  | dependency-cruiser を動かすディレクトリ。モジュールのパスはここからの相対パスで書かれる |
+| `severity`    | `"error"`        | 違反の重さ                                                                              |
+
 ## ルール
 
 ### Biome の機能の置き換え
@@ -132,7 +182,7 @@ src/features/
     ├── components/
     │   └── todo-header.tsx # ロジックの無い部品。1 ファイルずつ直接置く
     ├── shared/
-    │   └── format-date.ts  # 配下で共通のロジック。一番近い親の shared/ から相対パスで import する
+    │   └── todo-error/     # 配下で共通の部品（共有フィーチャー）。サブフィーチャーと同じ構成で、一番近い親の shared/ から相対パスで import する
     └── features/
         └── todo-list/      # ロジックを持つ部品（サブフィーチャー）。同じ構成で入れ子にできる
             ├── index.tsx
@@ -141,23 +191,27 @@ src/features/
                 └── todo-item/
 ```
 
-| ルール                       | 内容                                                                                                                                            |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/` と `components/` と `shared/` だけにする           |
-| `no-cross-feature-import`    | フィーチャーからは同じフィーチャーと直下のサブフィーチャー・親の `shared/` だけを、features の外からは features 直下のフィーチャーだけを import |
-| `use-nearest-shared-import`  | `shared/` は、一番近い親のフィーチャーの `shared/` だけを相対パスで import する                                                                 |
-| `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                                         |
-| `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く                            |
-| `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                                       |
+| ルール                       | 内容                                                                                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `use-feature-directory`      | features 直下にはディレクトリだけを置き、フィーチャーの中のディレクトリは `features/<name>/`・`shared/<name>/`・`components/` だけにする             |
+| `no-cross-feature-import`    | フィーチャーからは同じフィーチャー・直下のサブフィーチャー・親の共有フィーチャーだけを、features の外からは features 直下のフィーチャーだけを import |
+| `use-nearest-shared-import`  | 共有フィーチャー（`shared/<name>/`）は、一番近い親のフィーチャーの `shared/` からだけ相対パスで import する                                          |
+| `no-logic-in-components`     | `components/` の部品でフック（`useXxx(...)`）を呼ばない                                                                                              |
+| `no-relative-cross-boundary` | 境界（フィーチャー・レイヤー・`src/` 直下のファイル）を越える import を相対パスで書かず、`@/` のパスエイリアスで書く                                 |
+| `no-logic-in-routes`         | ルーティングのファイルで、`allowHooks` に挙げたもの以外のフックを呼ばない                                                                            |
 
 `no-cross-feature-import` は、ページ同士やサブフィーチャー同士の横の import を報告する。
 ほかのフィーチャーから使われるフィーチャーはページではない。使う側の `features/` へ移す。
 import のパスは、相対パスと `aliases` に挙げたパスエイリアス（既定は `@/` → `src/`）を解決して見る。
 
-`use-nearest-shared-import` は、import するファイルのフィーチャー自身と親のフィーチャーのうち、`shared/` を持つ一番近いものの `shared/` だけを許す。
-兄弟や子のフィーチャーの `shared/`、より近い `shared/` があるときの遠い親の `shared/`、features の外からの `shared/` の import を報告する。
+共有フィーチャーは、`features/<name>/` のサブフィーチャーと同じ構成で、`shared/<name>/` に置くフィーチャー。
+`shared/` を持つフィーチャーの配下の、複数のフィーチャーから使う部品を置く。
+
+`use-nearest-shared-import` は、import するファイルのフィーチャー自身と親のフィーチャーのうち、`shared/` を持つ一番近いものの共有フィーチャーだけを許す。
+兄弟や子のフィーチャーの共有フィーチャー、より近い `shared/` があるときの遠い親の共有フィーチャー、features の外からの共有フィーチャーの import を報告する。
 一番近い `shared/` でも、パスエイリアスで書いた import は報告する。
 一番近い `shared/` を決めるため、各フィーチャーの `shared/` の有無をファイルシステムで見る。
+同じ制約を dependency-cruiser でも検査できる（上の「dependency-cruiser」を参照）。
 
 `no-relative-cross-boundary` は、`aliases` の解決先のディレクトリ（既定は `src/`）の中を次の単位に分け、単位を越える相対パスの import を報告する。
 報告のメッセージには、書き換え先のエイリアスのパスが出る。

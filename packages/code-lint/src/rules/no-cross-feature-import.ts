@@ -10,32 +10,32 @@ import {
   resolveAliases,
   resolveFeaturesDir,
   resolveImportSource,
-  SHARED_DIR,
+  sharedOwnerOf,
 } from "../utils/feature-path.ts";
 
 const MESSAGE_FROM_FEATURE =
-  "フィーチャーから import できるのは、同じフィーチャーのファイルと直下のサブフィーチャー（features/<name>/）、親のフィーチャーの shared/ だけです。ほかのフィーチャーの中で使うものは、使う側の features/ か components/ に移してください";
+  "フィーチャーから import できるのは、同じフィーチャーのファイルと直下のサブフィーチャー（features/<name>/）、親のフィーチャーの共有フィーチャー（shared/<name>/）だけです。ほかのフィーチャーの中で使うものは、使う側の features/ か components/ に移してください";
 const MESSAGE_FROM_OUTSIDE =
   "features の外から import できるのは、features 直下のフィーチャー（ページ）だけです。サブフィーチャーは親のフィーチャーから使ってください";
 
-/**
- * フィーチャー own から target を import してよいか（own がどのフィーチャーにも属さなければ見ない）。
- * targetRest は target のディレクトリから見た import 先の残りのセグメント
- */
-const isAllowedFrom = (
-  own: string[] | undefined,
-  target: string[],
-  targetRest: string[],
-) =>
+/** 共有フィーチャー target の持ち主が、own 自身か own の親のフィーチャーか */
+const isSharedFromAncestor = (own: string[], target: string[]) => {
+  const owner = sharedOwnerOf(target);
+  return owner !== undefined && isSelfOrAncestorFeature(owner, own);
+};
+
+/** フィーチャー own から target を import してよいか（own がどのフィーチャーにも属さなければ見ない） */
+const isAllowedFrom = (own: string[] | undefined, target: string[]) =>
   own === undefined ||
   isSameFeature(own, target) ||
   isDirectSubFeature(own, target) ||
-  (targetRest[0] === SHARED_DIR && isSelfOrAncestorFeature(target, own));
+  isSharedFromAncestor(own, target);
 
 // features 直下にページ相当のフィーチャーだけを置き、部品をサブフィーチャーとして親の中に閉じ込めるための
 // import の制約。フィーチャーからは、同じフィーチャーのファイルと直下のサブフィーチャーだけを import でき、
 // features の外（ルーティングなど）からは features 直下のフィーチャーだけを import できる。
-// 親のフィーチャーの shared/ も import できる（どの shared/ に限るかは use-nearest-shared-import が見る）。
+// 自身と親のフィーチャーの共有フィーチャー（shared/<name>/）も import できる
+// （どの shared/ に限るかは use-nearest-shared-import が見る）。
 // groups に挙げたディレクトリ（`shared` など）の中のフィーチャーは、どこからでも import できる。
 // 相対パスと、aliases に挙げたパスエイリアス（既定は `@/` → `src/`）の import を見る
 export const noCrossFeatureImport = defineRule({
@@ -55,7 +55,7 @@ export const noCrossFeatureImport = defineRule({
       if (importer === undefined) {
         return target.feature.length === 1 ? undefined : MESSAGE_FROM_OUTSIDE;
       }
-      return isAllowedFrom(importer.feature, target.feature, target.rest)
+      return isAllowedFrom(importer.feature, target.feature)
         ? undefined
         : MESSAGE_FROM_FEATURE;
     };

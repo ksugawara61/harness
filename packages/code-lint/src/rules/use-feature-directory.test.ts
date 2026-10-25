@@ -50,6 +50,16 @@ ruleTester.run("use-feature-directory", useFeatureDirectory, {
       errors: 1,
       name: "allowDirs に無いディレクトリは報告する",
     },
+    {
+      ...at("todo-page/shared/format-date.ts"),
+      errors: 1,
+      name: "shared/ の直下のファイルは報告する（共有フィーチャーはディレクトリにする）",
+    },
+    {
+      ...at("todo-page/shared/todo-error/utils/format.ts"),
+      errors: 1,
+      name: "共有フィーチャーの中も features/・shared/・components/ 以外のディレクトリは報告する",
+    },
   ],
   valid: [
     {
@@ -69,8 +79,18 @@ ruleTester.run("use-feature-directory", useFeatureDirectory, {
       name: "components/ の直下のファイルは許可する",
     },
     {
-      ...at("todo-page/features/todo-list/shared/filter/by-status.ts"),
-      name: "shared/ の中のファイルはディレクトリに分けても許可する",
+      ...at("todo-page/shared/todo-error/index.tsx"),
+      name: "shared/<name>/ の共有フィーチャーのファイルは許可する",
+    },
+    {
+      ...at("todo-page/shared/todo-error/features/todo-error-detail/index.tsx"),
+      name: "共有フィーチャーの中のサブフィーチャーも許可する",
+    },
+    {
+      ...at(
+        "todo-page/features/todo-list/shared/todo-filter/components/chip.tsx",
+      ),
+      name: "サブフィーチャーの共有フィーチャーの components/ も許可する",
     },
     {
       ...at("shared/scrap-chat/features/scrap-chat-item/index.tsx"),

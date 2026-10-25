@@ -6,25 +6,26 @@ import { ruleTester } from "../test-utils/rule-tester.ts";
 import { useNearestSharedImport } from "./use-nearest-shared-import.ts";
 
 // ルールはファイルシステムで shared/ の有無を見るため、次のディレクトリを用意する
-// - todo-page/shared/
-// - todo-page/features/todo-list/shared/
-// - shared/scrap-chat/shared/（グループの中のフィーチャー）
+// - todo-page/shared/todo-error/
+// - todo-page/shared/todo-banner/shared/todo-icon/（自身も shared/ を持つ共有フィーチャー）
+// - todo-page/features/todo-list/shared/todo-filter/
+// - shared/scrap-chat/shared/scrap-avatar/（グループの中のフィーチャー）
 // todo-page/features/todo-add/ と todo-page/features/todo-list/features/todo-item/ は shared/ を持たない
-const src = join(
-  mkdtempSync(join(tmpdir(), "use-nearest-shared-import-")),
-  "src",
-);
+const root = mkdtempSync(join(tmpdir(), "use-nearest-shared-import-"));
+const src = join(root, "src");
 const featuresDir = join(src, "features");
 const todoPage = join(featuresDir, "todo-page");
-const todoList = join(todoPage, "features", "todo-list");
-mkdirSync(join(todoPage, "shared"), { recursive: true });
-mkdirSync(join(todoList, "shared"), { recursive: true });
-mkdirSync(join(featuresDir, "shared", "scrap-chat", "shared"), {
-  recursive: true,
-});
+for (const dir of [
+  join(todoPage, "shared", "todo-error"),
+  join(todoPage, "shared", "todo-banner", "shared", "todo-icon"),
+  join(todoPage, "features", "todo-list", "shared", "todo-filter"),
+  join(featuresDir, "shared", "scrap-chat", "shared", "scrap-avatar"),
+]) {
+  mkdirSync(dir, { recursive: true });
+}
 
 afterAll(() => {
-  rmSync(join(src, ".."), { force: true, recursive: true });
+  rmSync(root, { force: true, recursive: true });
 });
 
 const options = [
@@ -42,55 +43,71 @@ ruleTester.run("use-nearest-shared-import", useNearestSharedImport, {
     {
       ...from(
         "features/todo-page/features/todo-list/index.tsx",
-        'import { formatDate } from "../../shared/format.ts";',
+        'import { TodoError } from "../../shared/todo-error/index.tsx";',
       ),
       errors: 1,
-      name: "自分の shared/ があるときの親のフィーチャーの shared/ の import は報告する",
+      name: "自分の shared/ があるときの親のフィーチャーの共有フィーチャーの import は報告する",
     },
     {
       ...from(
         "features/todo-page/features/todo-list/features/todo-item/index.tsx",
-        'import { formatDate } from "../../../../shared/format.ts";',
+        'import { TodoError } from "../../../../shared/todo-error/index.tsx";',
       ),
       errors: 1,
-      name: "間により近い shared/ があるときの遠い親の shared/ の import は報告する",
+      name: "間により近い shared/ があるときの遠い親の共有フィーチャーの import は報告する",
     },
     {
       ...from(
         "features/todo-page/features/todo-add/index.tsx",
-        'import { filterTodos } from "../todo-list/shared/filter.ts";',
+        'import { TodoFilter } from "../todo-list/shared/todo-filter/index.tsx";',
       ),
       errors: 1,
-      name: "兄弟のサブフィーチャーの shared/ の import は報告する",
+      name: "兄弟のサブフィーチャーの共有フィーチャーの import は報告する",
     },
     {
       ...from(
         "features/todo-page/index.tsx",
-        'import { filterTodos } from "./features/todo-list/shared/filter.ts";',
+        'import { TodoFilter } from "./features/todo-list/shared/todo-filter/index.tsx";',
       ),
       errors: 1,
-      name: "子のサブフィーチャーの shared/ の import は報告する",
+      name: "子のサブフィーチャーの共有フィーチャーの import は報告する",
+    },
+    {
+      ...from(
+        "features/todo-page/shared/todo-banner/index.tsx",
+        'import { TodoError } from "../todo-error/index.tsx";',
+      ),
+      errors: 1,
+      name: "自身も shared/ を持つ共有フィーチャーからの兄弟の共有フィーチャーの import は報告する",
     },
     {
       ...from(
         "features/todo-page/features/todo-list/index.tsx",
-        'import { filterTodos } from "@/features/todo-page/features/todo-list/shared/filter.ts";',
+        'import { TodoFilter } from "@/features/todo-page/features/todo-list/shared/todo-filter/index.tsx";',
       ),
       errors: 1,
       name: "一番近い shared/ でもパスエイリアスで書いた import は報告する",
     },
     {
       ...from(
-        "app/index.tsx",
-        'import { formatDate } from "@/features/todo-page/shared/format.ts";',
+        "features/todo-page/shared/todo-banner/index.tsx",
+        'import { useService } from "@/features/todo-page/shared/todo-banner/service.ts";',
       ),
       errors: 1,
-      name: "features の外からの shared/ の import は報告する",
+      name: "共有フィーチャーの中のファイルどうしでもパスエイリアスで書いた import は報告する",
+    },
+    {
+      ...from(
+        "app/index.tsx",
+        'import { TodoError } from "@/features/todo-page/shared/todo-error/index.tsx";',
+      ),
+      errors: 1,
+      name: "features の外からの共有フィーチャーの import は報告する",
     },
     {
       ...from(
         "features/todo-page/features/todo-list/mocks.ts",
-        'export { formatDate } from "../../shared/format.ts";',
+        'export { TodoErrorMocks } from "../../shared/todo-error/mocks.ts";',
       ),
       errors: 1,
       name: "一番近くない shared/ からの re-export も報告する",
@@ -98,7 +115,7 @@ ruleTester.run("use-nearest-shared-import", useNearestSharedImport, {
     {
       ...from(
         "features/todo-page/features/todo-list/index.tsx",
-        'const format = () => import("../../shared/format.ts");',
+        'const TodoError = lazy(() => import("../../shared/todo-error/index.tsx"));',
       ),
       errors: 1,
       name: "一番近くない shared/ の動的 import も報告する",
@@ -108,51 +125,65 @@ ruleTester.run("use-nearest-shared-import", useNearestSharedImport, {
     {
       ...from(
         "features/todo-page/index.tsx",
-        'import { formatDate } from "./shared/format.ts";',
+        'import { TodoError } from "./shared/todo-error/index.tsx";',
       ),
-      name: "自分の shared/ の import は許可する",
+      name: "自分の shared/ の共有フィーチャーの import は許可する",
     },
     {
       ...from(
-        "features/todo-page/features/todo-add/service.ts",
-        'import { formatDate } from "../../shared/format.ts";',
+        "features/todo-page/features/todo-add/index.tsx",
+        'import { TodoError } from "../../shared/todo-error/index.tsx";',
       ),
-      name: "自分の shared/ が無いときの親のフィーチャーの shared/ の import は許可する",
+      name: "自分の shared/ が無いときの親のフィーチャーの共有フィーチャーの import は許可する",
     },
     {
       ...from(
-        "features/todo-page/features/todo-list/features/todo-item/service.ts",
-        'import { filterTodos } from "../../shared/filter.ts";',
+        "features/todo-page/features/todo-list/features/todo-item/index.tsx",
+        'import { TodoFilter } from "../../shared/todo-filter/index.tsx";',
       ),
-      name: "一番近い親の shared/ の import は許可する",
+      name: "一番近い親の共有フィーチャーの import は許可する",
     },
     {
       ...from(
         "features/todo-page/features/todo-list/components/todo-remaining.tsx",
-        'import { countRemaining } from "../shared/count.ts";',
+        'import { TodoFilter } from "../shared/todo-filter/index.tsx";',
       ),
-      name: "components/ からの自分のフィーチャーの shared/ の import は許可する",
+      name: "components/ からの自分のフィーチャーの共有フィーチャーの import は許可する",
     },
     {
       ...from(
-        "features/todo-page/features/todo-list/shared/filter.ts",
-        'import { isDone } from "./is-done.ts";',
+        "features/todo-page/shared/todo-error/stories.tsx",
+        'import { TodoError } from "./index.tsx";\nimport { TodoErrorMocks } from "./mocks.ts";',
       ),
-      name: "shared/ の中どうしの import は許可する",
+      name: "共有フィーチャーの中のファイルどうしの import は許可する",
+    },
+    {
+      ...from(
+        "features/todo-page/shared/todo-error/index.tsx",
+        'import { TodoBanner } from "../todo-banner/index.tsx";',
+      ),
+      name: "shared/ を持たない共有フィーチャーからの兄弟の共有フィーチャーの import は許可する",
+    },
+    {
+      ...from(
+        "features/todo-page/shared/todo-banner/index.tsx",
+        'import { useService } from "./service.ts";\nimport { TodoIcon } from "./shared/todo-icon/index.tsx";',
+      ),
+      name: "自身も shared/ を持つ共有フィーチャーの中のファイルと自身の shared/ の import は許可する",
     },
     {
       ...from(
         "features/todo-page/features/todo-list/index.tsx",
-        'import * as shared from "./shared";',
+        'import { TodoFilter } from "./shared/todo-filter";',
       ),
-      name: "shared/ のディレクトリを指す import も一番近ければ許可する",
+      name: "共有フィーチャーのディレクトリを指す import も一番近ければ許可する",
     },
     {
       ...from(
         "features/shared/scrap-chat/features/scrap-chat-item/index.tsx",
-        'import { formatMessage } from "../../shared/format.ts";',
+        'import { ScrapAvatar } from "../../shared/scrap-avatar/index.tsx";',
       ),
-      name: "グループの中のフィーチャーでも一番近い親の shared/ の import は許可する",
+      name: "グループの中のフィーチャーでも一番近い親の共有フィーチャーの import は許可する",
     },
     {
       ...from(
@@ -166,7 +197,7 @@ ruleTester.run("use-nearest-shared-import", useNearestSharedImport, {
         "features/todo-page/features/todo-list/index.tsx",
         'import { Button } from "@/ui/button/index.tsx";\nimport { useService } from "./service.ts";',
       ),
-      name: "shared/ 以外の import は対象にしない",
+      name: "共有フィーチャー以外の import は対象にしない",
     },
   ],
 });

@@ -6,7 +6,7 @@
       "project": [],
     },
     "packages/code-lint": {
-      "entry": ["src/plugin.ts", "src/bin/*.ts"],
+      "entry": ["src/plugin.ts", "src/dependency-cruiser.ts", "src/bin/*.ts"],
       "project": ["src/**/*.ts"],
     },
     "packages/docs-lint": {

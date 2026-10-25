@@ -7,22 +7,24 @@ import {
   featureOptionsProperties,
   isRelativeSource,
   isSameFeature,
+  isSelfOrAncestorFeature,
   parseFeaturePath,
   resolveAliases,
   resolveFeaturesDir,
   resolveImportSource,
   SHARED_DIR,
   selfAndAncestorFeatures,
+  sharedOwnerOf,
 } from "../utils/feature-path.ts";
 
 const MESSAGE_NOT_NEAREST =
-  "shared/ の共通ロジックは、一番近い親のフィーチャーの shared/ からだけ import してください。ほかの shared/ のものを使うなら、使う側すべてに一番近い共通の親のフィーチャーの shared/ に移してください";
+  "共有フィーチャー（shared/<name>/）は、一番近い親のフィーチャーの shared/ からだけ import してください。ほかの shared/ のものを使うなら、使う側すべてに一番近い共通の親のフィーチャーの shared/ に移してください";
 const MESSAGE_ALIAS =
-  "shared/ の共通ロジックは、パスエイリアスではなく相対パスで import してください";
+  "共有フィーチャー（shared/<name>/）は、パスエイリアスではなく相対パスで import してください";
 
-// フィーチャーの中の shared/ に、配下のサブフィーチャーに共通のロジックを置く規約の import の制約。
-// shared/ を import できるのは、import するファイルの属するフィーチャーとその親のフィーチャーのうち、
-// shared/ を持つ一番近いものの shared/ だけで、相対パスで書く。
+// フィーチャーの中の shared/<name>/ に、配下のフィーチャーに共通の部品（共有フィーチャー）を置く規約の
+// import の制約。共有フィーチャーを import できるのは、import するファイルの属するフィーチャーと
+// その親のフィーチャーのうち、shared/ を持つ一番近いものの shared/ の中だけで、相対パスで書く。
 // 兄弟や子のフィーチャーの shared/、より近い shared/ があるときの遠い親の shared/、
 // features の外からの shared/ の import は報告する。
 // 一番近い shared/ を決めるため、ファイルシステムで各フィーチャーの shared/ の有無を見る
@@ -44,10 +46,18 @@ export const useNearestSharedImport = defineRule({
         ...options,
         isModule: true,
       });
-      if (target?.feature === undefined || target.rest[0] !== SHARED_DIR) {
-        return undefined;
-      }
-      if (nearest === undefined || !isSameFeature(nearest, target.feature)) {
+      if (target?.feature === undefined) return undefined;
+      const owner = sharedOwnerOf(target.feature);
+      if (owner === undefined) return undefined;
+      // 共有フィーチャーの中から自身を import するときは、一番近いかを見ない
+      // （親子の制約は no-cross-feature-import が見る）
+      const isInside =
+        importer?.feature !== undefined &&
+        isSelfOrAncestorFeature(target.feature, importer.feature);
+      if (
+        !isInside &&
+        (nearest === undefined || !isSameFeature(nearest, owner))
+      ) {
         return MESSAGE_NOT_NEAREST;
       }
       return isRelativeSource(source) ? undefined : MESSAGE_ALIAS;

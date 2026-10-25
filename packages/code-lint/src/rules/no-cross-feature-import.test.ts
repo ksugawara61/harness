@@ -60,10 +60,34 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
     {
       ...from(
         "features/todo-page/features/todo-add/index.tsx",
-        'import { filterTodos } from "../todo-list/shared/filter.ts";',
+        'import { TodoFilter } from "../todo-list/shared/todo-filter/index.tsx";',
       ),
       errors: 1,
-      name: "兄弟のサブフィーチャーの shared/ の import は報告する",
+      name: "兄弟のサブフィーチャーの共有フィーチャーの import は報告する",
+    },
+    {
+      ...from(
+        "features/todo-page/features/todo-list/index.tsx",
+        'import { useService } from "../../shared/todo-error/features/todo-error-detail/service.ts";',
+      ),
+      errors: 1,
+      name: "親の共有フィーチャーのサブフィーチャーの import は報告する",
+    },
+    {
+      ...from(
+        "features/todo-page/shared/todo-error/index.tsx",
+        'import { useService } from "../../service.ts";',
+      ),
+      errors: 1,
+      name: "共有フィーチャーから shared/ を持つフィーチャーのファイルの import は報告する",
+    },
+    {
+      ...from(
+        "app/index.tsx",
+        'import { TodoError } from "@/features/todo-page/shared/todo-error/index.tsx";',
+      ),
+      errors: 1,
+      name: "features の外からの共有フィーチャーの import は報告する",
     },
     {
       ...from(
@@ -131,9 +155,23 @@ ruleTester.run("no-cross-feature-import", noCrossFeatureImport, {
     {
       ...from(
         "features/todo-page/features/todo-list/features/todo-item/service.ts",
-        'import { formatDate } from "../../../../shared/format.ts";\nimport { filterTodos } from "../../shared/filter.ts";',
+        'import { TodoError } from "../../../../shared/todo-error/index.tsx";\nimport { TodoFilter } from "../../shared/todo-filter/index.tsx";',
       ),
-      name: "親のフィーチャーの shared/ の import は許可する（どの shared/ に限るかは use-nearest-shared-import が見る）",
+      name: "親のフィーチャーの共有フィーチャーの import は許可する（どの shared/ に限るかは use-nearest-shared-import が見る）",
+    },
+    {
+      ...from(
+        "features/todo-page/index.tsx",
+        'import { TodoError } from "./shared/todo-error/index.tsx";',
+      ),
+      name: "自分の shared/ の共有フィーチャーの import は許可する",
+    },
+    {
+      ...from(
+        "features/todo-page/shared/todo-error/index.tsx",
+        'import { TodoBanner } from "../todo-banner/index.tsx";\nimport { TodoErrorDetail } from "./features/todo-error-detail/index.tsx";',
+      ),
+      name: "共有フィーチャーから兄弟の共有フィーチャーと自身のサブフィーチャーの import は許可する",
     },
     {
       ...from(
