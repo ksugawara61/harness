@@ -112,6 +112,10 @@ GraphQL のルールは、``graphql(`...`)``・``gql`...` ``・``graphql`...` ``
 | `no-raw-setter-return`                 | `useService` の return で `useState` の setter をそのまま返さない           |
 | `no-expo-router-in-use-service-return` | `useRouter()` の値を `useService` の return に含めない                      |
 | `no-multiple-feature-exports`          | 1 つのファイルから export するのは 1 つだけ（feature の入口に当てる）       |
+| `use-service-file-name`                | `useService` は `service.ts` に置き、`service` から import する             |
+
+`use-service-file-name` は、`useService` の宣言と import の両方を見るため、`src/features/**` のように `.ts` と `.tsx` を含むパスに当てる。
+`use-service.ts`・`hooks.ts` などに置くと、ファイル名がフィーチャーごとにばらつくため、`service.ts` に揃える。
 
 `specIt(spec, key, { given, when, yields })` の形で仕様テストを書く規約のルール。
 `specIt` は [spec](../spec/README.md) が提供する。
