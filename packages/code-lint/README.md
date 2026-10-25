@@ -140,11 +140,17 @@ API のモックを `mocks.ts` にまとめる規約のルール。
 
 UI と Storybook のルール。
 
-| ルール                | 内容                                                     |
-| --------------------- | -------------------------------------------------------- |
-| `no-style-prop-in-ui` | UI コンポーネントの Props に `style` を出さない          |
-| `no-test-id`          | `testID` 属性を使わず、`aria-label` などで要素を特定する |
-| `no-storybook-title`  | Storybook の meta に `title` を書かず、autoTitle を使う  |
+| ルール                | 内容                                                                |
+| --------------------- | ------------------------------------------------------------------- |
+| `no-style-prop-in-ui` | UI コンポーネントの Props に `style` を出さない                     |
+| `no-test-id`          | `testID` 属性を使わず、`aria-label` などで要素を特定する            |
+| `no-storybook-title`  | Storybook の meta に `title` を書かず、autoTitle を使う             |
+| `use-stories-file`    | コンポーネントを export するファイルの隣に `stories.tsx` を必ず置く |
+
+`use-stories-file` は、同じディレクトリに `stories.tsx` が無いとき、最初の値の export 文を報告する。
+`button.stories.tsx` のような名前は数えず、`spec.ts`・`test.tsx` と同じくファイル名を `stories.tsx` に固定する。
+コンポーネントの入口（`src/features/*/index.tsx`・`src/ui/*/index.tsx` など）に当てる。
+ファイルシステムを見るため、`stories.tsx` を足してもエディタの診断は古いまま残る場合がある。CLI の `oxlint` で確かめる。
 
 ```jsonc
 // .oxlintrc.json
@@ -157,6 +163,10 @@ UI と Storybook のルール。
         "code-lint/no-inline-handler-logic": "error",
         "code-lint/only-use-service-hooks": "error",
       },
+    },
+    {
+      "files": ["src/features/*/index.tsx", "src/ui/*/index.tsx"],
+      "rules": { "code-lint/use-stories-file": "error" },
     },
     {
       "files": ["src/**/stories.tsx"],
